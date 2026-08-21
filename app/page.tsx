@@ -1,12 +1,12 @@
 import Link from "next/link";
-import button from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 export function Home() {
   return (
     <main>
       <h1>Bem-vindo ao RITIMU !</h1>
       <Link href="/login">
-        <button>Entrar</button>
+        <Button>Entrar</Button>
       </Link>
     </main>
   );

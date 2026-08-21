@@ -1,15 +1,15 @@
 import Link from "next/link"
-import button from "@/components/ui/button"
+import { Button }  from "@/components/ui/button"
 
 export function Login() {
     return (
         <main>
             <h1>Tela de login</h1>
             <Link href="/">
-                <button>Voltar para home</button>
+                <Button>Voltar para home</Button>
             </Link>
         </main>
     )
 }
 
-export default Login
+export default Login 
