@@ -1,0 +1,60 @@
+[33mcommit 76826ef78fdb4b578c9880a1e34733e02693c27b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: Kaio Cotrim <kaio.cotrim@infor.doc>
+Date:   Fri Aug 21 11:36:52 2026 -0300
+
+    feat: prisma conectado com o supabase
+
+[33mcommit 45c8b3ce8836ef102399233581066e8461e07307[m[33m ([m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Merge: 3f9f268 0016deb
+Author: Kaio Cotrim <kaio.cotrim@infor.doc>
+Date:   Fri Aug 21 09:34:25 2026 -0300
+
+    Merge branch 'login'
+
+[33mcommit 0016debc34e01edea7cfbe78394f13a34d84dbec[m[33m ([m[1;32mlogin[m[33m)[m
+Author: Kaio Cotrim <kaio.cotrim@infor.doc>
+Date:   Fri Aug 21 09:28:06 2026 -0300
+
+    feat: adiciona componentes da tela de login
+
+[33mcommit 3f9f268672ba9f0333446c58153988ad5dcdfd28[m
+Author: Kaio Cotrim <kaio.cotrim@infor.doc>
+Date:   Fri Aug 21 08:45:43 2026 -0300
+
+    feat: criei o componente input
+
+[33mcommit 565213e19a3c94dce27259c50f8e13b94262d315[m
+Author: kaiocotrim <kaioalan40@gmail.com>
+Date:   Thu Aug 20 23:09:23 2026 -0300
+
+    feat: criando o componte de card
+
+[33mcommit 863ecca18d984a1c7cd044b8182efaf2235aa7c8[m
+Author: kaiocotrim <kaioalan40@gmail.com>
+Date:   Thu Aug 20 23:04:14 2026 -0300
+
+    chore: configura commitlint e husky
+
+[33mcommit c5f435f3e9fc87c2dc62e0657ada0222449a20f5[m
+Author: kaiocotrim <kaioalan40@gmail.com>
+Date:   Thu Aug 20 22:52:22 2026 -0300
+
+    feat: adiciona botão de login
+
+[33mcommit 97b0fcc90f8fa84881d3b7fcfc11334bb87a178b[m
+Author: kaiocotrim <kaioalan40@gmail.com>
+Date:   Thu Aug 20 22:30:22 2026 -0300
+
+    chore: criando as rotas com Approuter da land page -> Login
+
+[33mcommit 28e073473ba8402f82c1c498e2c58fef996b55d2[m
+Author: kaiocotrim <kaioalan40@gmail.com>
+Date:   Thu Aug 20 22:08:54 2026 -0300
+
+    feat: montando a estrutura do projeto
+
+[33mcommit 2ed7a2b25261e855811f0a32ed50d42fdfa295c0[m
+Author: kaiocotrim <kaioalan40@gmail.com>
+Date:   Thu Aug 20 21:47:52 2026 -0300
+
+    Initial commit from Create Next App
