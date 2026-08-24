@@ -5,23 +5,15 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET() {
   const requestHeaders = await headers()
-
-  const session = await auth.api.getSession({
-    headers: requestHeaders,
-  })
+  const session = await auth.api.getSession({ headers: requestHeaders })
 
   if (!session) {
-    return Response.json(
-      { error: "Não autenticado" },
-      { status: 401 }
-    )
+    return Response.json({ error: "Não autenticado" }, { status: 401 })
   }
 
   const googleAccount = await prisma.account.findFirst({
-    where: {
-      userId: session.user.id,
-      providerId: "google",
-    },
+    where: { userId: session.user.id, providerId: "google" },
+    select: { id: true },
   })
 
   if (!googleAccount) {
@@ -31,26 +23,32 @@ export async function GET() {
     )
   }
 
-  const { accessToken } = await auth.api.getAccessToken({
-    body: {
-      accountId: googleAccount.id,
-    },
-    headers: requestHeaders,
-  })
+  let accessToken: string
 
-  const response = await fetch(
-    "https://classroom.googleapis.com/v1/courses",
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+  try {
+    const token = await auth.api.getAccessToken({
+      body: { accountId: googleAccount.id },
+      headers: requestHeaders,
+    })
+    accessToken = token.accessToken
+  } catch {
+    return Response.json(
+      {
+        error: "Não foi possível renovar o acesso ao Google Classroom",
+        code: "GOOGLE_REAUTH_REQUIRED",
       },
-    }
-  )
+      { status: 401 }
+    )
+  }
 
-  const data = await response.json()
+  const response = await fetch("https://classroom.googleapis.com/v1/courses", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  })
+  const data = await response.json().catch(() => null)
 
   if (!response.ok) {
-    return Response.json(data, {
+    return Response.json(data ?? { error: "Falha ao buscar turmas" }, {
       status: response.status,
     })
   }
