@@ -2,7 +2,7 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { LogoutButton } from "@/components/auth/logout-button"
 import { ConnectGoogleClassroom } from "@/components/integrations/connect-google-classroom"
-
+import Link from "next/link"
 import { auth } from "@/lib/auth"
 
 export default async function Dashboard() {
@@ -21,6 +21,7 @@ export default async function Dashboard() {
       <p>Olá, {session.user.name}</p>
       <ConnectGoogleClassroom />
       <LogoutButton />
+      <Link href="/disciplinas">Minhas matérias</Link>
     </main>
   )
 }

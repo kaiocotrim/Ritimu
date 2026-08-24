@@ -15,18 +15,32 @@ export async function GET(_request: Request, { params }: RouteParams) {
     return Response.json({ error: "Não autenticado" }, { status: 401 })
   }
 
-  const googleAccount = await prisma.account.findFirst({
-    where: {
-      userId: session.user.id,
-      providerId: "google",
-    },
-    select: { id: true },
-  })
+  const { courseId } = await params
+  const [googleAccount, course] = await Promise.all([
+    prisma.account.findFirst({
+      where: {
+        userId: session.user.id,
+        providerId: "google",
+      },
+      select: { id: true },
+    }),
+    prisma.classroomCourse.findFirst({
+      where: { userId: session.user.id, googleCourseId: courseId },
+      select: { id: true },
+    }),
+  ])
 
   if (!googleAccount) {
     return Response.json(
       { error: "Google Classroom não conectado" },
       { status: 400 }
+    )
+  }
+
+  if (!course) {
+    return Response.json(
+      { error: "Disciplina não encontrada" },
+      { status: 404 }
     )
   }
 
@@ -61,7 +75,6 @@ export async function GET(_request: Request, { params }: RouteParams) {
     )
   }
 
-  const { courseId } = await params
   const response = await fetch(
     `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(courseId)}/courseWork`,
     {
