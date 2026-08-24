@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -9,23 +10,28 @@ import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
 
 export default function Login() {
+  const router = useRouter()
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const { data, error } = await authClient.signIn.email({
+    setError("")
+
+    const { error } = await authClient.signIn.email({
       email,
       password,
     })
 
     if (error) {
-      console.log(error)
+      setError("E-mail ou senha inválidos")
       return
     }
 
-    console.log(data)
+    router.push("/dashboard")
   }
 
   return (
@@ -48,21 +54,19 @@ export default function Login() {
             onChange={(event) => setPassword(event.target.value)}
           />
 
+          {error && <p>{error}</p>}
+
           <Button type="submit">
             Entrar
           </Button>
         </form>
 
-        <Link href="/">
-          <Button variant="outline">
-            Voltar para home
-          </Button>
+        <Link href="/cadastro">
+          Criar conta
         </Link>
 
-        <Link href="/cadastro">
-          <Button variant="outline">
-            Criar conta
-          </Button>
+        <Link href="/">
+          Voltar para home
         </Link>
       </Card>
     </main>
