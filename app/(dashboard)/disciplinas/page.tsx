@@ -1,6 +1,6 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-
+import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { SyncGoogleClassroom } from "@/components/integrations/sync-google-classroom"
@@ -35,7 +35,8 @@ export default async function DisciplinasPage() {
 
       <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {courses.map((course) => (
-          <div
+          <Link
+            href={`/disciplinas/${course.id}`}
             key={course.id}
             className="rounded-3xl border p-5"
           >
@@ -48,7 +49,7 @@ export default async function DisciplinasPage() {
                 {course.section}
               </p>
             )}
-          </div>
+          </Link>
         ))}
       </div>
     </main>
