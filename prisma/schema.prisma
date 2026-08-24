@@ -22,6 +22,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   classroomCourses ClassroomCourse[]
+  classroomItemCompletions ClassroomItemCompletion[]
 
   @@unique([email])
   @@map("user")
@@ -90,6 +91,8 @@ model ClassroomCourse {
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   assignments      ClassroomAssignment[]
+  itemCompletions  ClassroomItemCompletion[]
+  totalItems       Int      @default(0)
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -119,4 +122,22 @@ model ClassroomAssignment {
 
   @@unique([courseId, googleAssignmentId])
   @@index([courseId])
+}
+
+model ClassroomItemCompletion {
+  id        String   @id @default(cuid())
+  itemKey   String
+  completed Boolean  @default(false)
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  courseId String
+  course   ClassroomCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, courseId, itemKey])
+  @@index([userId, courseId, completed])
 }

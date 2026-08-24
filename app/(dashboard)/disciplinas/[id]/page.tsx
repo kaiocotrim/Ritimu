@@ -3,6 +3,7 @@ import { headers } from "next/headers"
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 
+import { CompletionCheckbox } from "@/components/classroom/completion-checkbox"
 import { auth } from "@/lib/auth"
 import {
   getAssignmentUrl,
@@ -158,6 +159,41 @@ export default async function DisciplinaPage({
   const unassignedMaterials = courseMaterials.filter(
     (material) => !material.topicId || !knownTopicIds.has(material.topicId)
   )
+  const itemKeys = [
+    ...assignments.map((assignment) => `coursework:${assignment.id}`),
+    ...courseMaterials.map((material) => `material:${material.id}`),
+  ]
+  let completedKeys = new Set<string>()
+
+  if (!integrationError) {
+    await prisma.$transaction([
+      prisma.classroomCourse.update({
+        where: { id: course.id },
+        data: { totalItems: itemKeys.length },
+      }),
+      prisma.classroomItemCompletion.deleteMany({
+        where: {
+          userId: session.user.id,
+          courseId: course.id,
+          ...(itemKeys.length > 0 ? { itemKey: { notIn: itemKeys } } : {}),
+        },
+      }),
+      prisma.classroomItemCompletion.createMany({
+        data: itemKeys.map((itemKey) => ({
+          userId: session.user.id,
+          courseId: course.id,
+          itemKey,
+        })),
+        skipDuplicates: true,
+      }),
+    ])
+
+    const completedItems = await prisma.classroomItemCompletion.findMany({
+      where: { userId: session.user.id, courseId: course.id, completed: true },
+      select: { itemKey: true },
+    })
+    completedKeys = new Set(completedItems.map((item) => item.itemKey))
+  }
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:py-12">
@@ -202,6 +238,7 @@ export default async function DisciplinaPage({
                 courseId={course.id}
                 assignments={assignmentsByTopic.get(topic.topicId) ?? []}
                 materials={materialsByTopic.get(topic.topicId) ?? []}
+                completedKeys={completedKeys}
               />
             ))}
 
@@ -211,6 +248,7 @@ export default async function DisciplinaPage({
                 courseId={course.id}
                 assignments={unassigned}
                 materials={unassignedMaterials}
+                completedKeys={completedKeys}
               />
             )}
           </div>
@@ -225,11 +263,13 @@ function TopicSection({
   courseId,
   assignments,
   materials,
+  completedKeys,
 }: {
   title: string
   courseId: string
   assignments: GoogleClassroomCourseWork[]
   materials: GoogleClassroomCourseWorkMaterial[]
+  completedKeys: Set<string>
 }) {
   return (
     <section className="overflow-hidden rounded-3xl border bg-card">
@@ -249,12 +289,19 @@ function TopicSection({
         <div className="divide-y">
           {assignments.map((assignment) => {
             const activityUrl = getAssignmentUrl(assignment)
+            const itemKey = `coursework:${assignment.id}`
 
             return (
               <article
                 key={assignment.id}
                 className="flex items-start gap-4 px-5 py-4 sm:px-6"
               >
+              <CompletionCheckbox
+                courseId={courseId}
+                itemKey={itemKey}
+                initialCompleted={completedKeys.has(itemKey)}
+                label={`Marcar ${assignment.title} como concluída`}
+              />
               <div className="mt-0.5 rounded-2xl bg-muted p-2.5">
                 <BookOpen className="size-4" aria-hidden="true" />
               </div>
@@ -296,12 +343,19 @@ function TopicSection({
           })}
           {materials.map((material) => {
             const materialUrl = getCourseWorkMaterialUrl(material)
+            const itemKey = `material:${material.id}`
 
             return (
               <article
                 key={`material-${material.id}`}
                 className="flex items-start gap-4 px-5 py-4 sm:px-6"
               >
+                <CompletionCheckbox
+                  courseId={courseId}
+                  itemKey={itemKey}
+                  initialCompleted={completedKeys.has(itemKey)}
+                  label={`Marcar ${material.title} como concluído`}
+                />
                 <div className="mt-0.5 rounded-2xl bg-muted p-2.5">
                   <BookOpen className="size-4" aria-hidden="true" />
                 </div>
