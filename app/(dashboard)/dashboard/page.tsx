@@ -1,10 +1,25 @@
-export default function DashboardPage() {
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
+import { LogoutButton } from "@/components/auth/logout-button"
+
+import { auth } from "@/lib/auth"
+
+export default async function Dashboard() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (!session) {
+    redirect("/login")
+  }
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <main>
       <h1>Dashboard</h1>
-      <p>Bem-vindo ao dashboard!</p>
+
+      <p>Olá, {session.user.name}</p>
+      
+      <LogoutButton />
     </main>
   )
 }
-
-
