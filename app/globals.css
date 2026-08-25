@@ -128,3 +128,115 @@
     @apply font-sans;
   }
 }
+
+@keyframes galaxy-stars-drift {
+  0% {
+    background-position: -12px -220px;
+    filter: brightness(0.9);
+  }
+  28% {
+    background-position: 18px -142px;
+    filter: brightness(1.25);
+  }
+  61% {
+    background-position: -7px -68px;
+    filter: brightness(0.8);
+  }
+  82% {
+    background-position: 24px -25px;
+    filter: brightness(1.2);
+  }
+  100% {
+    background-position: -4px 0;
+    filter: brightness(1);
+  }
+}
+
+@keyframes galaxy-stars-crosswind {
+  0% {
+    background-position: 130% -90px;
+    opacity: 0.25;
+  }
+  37% {
+    background-position: 72% 15px;
+    opacity: 0.75;
+  }
+  68% {
+    background-position: 28% 82px;
+    opacity: 0.4;
+  }
+  100% {
+    background-position: -25% 170px;
+    opacity: 0.85;
+  }
+}
+
+@keyframes galaxy-stars-wander {
+  0% {
+    transform: translate3d(-9px, 7px, 0) rotate(-1deg);
+    opacity: 0.25;
+  }
+  33% {
+    transform: translate3d(13px, -8px, 0) rotate(1deg);
+    opacity: 0.7;
+  }
+  71% {
+    transform: translate3d(-3px, 12px, 0) rotate(0deg);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translate3d(10px, 3px, 0) rotate(-1deg);
+    opacity: 0.8;
+  }
+}
+
+.galaxy-stars {
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat-y;
+  background-size: 100% 220px;
+  animation: galaxy-stars-drift 4.3s ease-in-out infinite alternate;
+  animation-play-state: paused;
+}
+
+.galaxy-stars::before,
+.galaxy-stars::after {
+  position: absolute;
+  inset: -12px;
+  content: "";
+  background-repeat: repeat;
+  animation-play-state: paused;
+}
+
+.galaxy-stars::before {
+  background-image:
+    radial-gradient(circle at 12% 24%, white 0 0.8px, transparent 1.4px),
+    radial-gradient(circle at 43% 68%, white 0 1px, transparent 1.6px),
+    radial-gradient(circle at 77% 19%, white 0 0.7px, transparent 1.3px),
+    radial-gradient(circle at 91% 73%, white 0 1px, transparent 1.5px);
+  background-size: 170px 145px;
+  animation: galaxy-stars-crosswind 6.7s ease-in-out infinite alternate;
+}
+
+.galaxy-stars::after {
+  background-image:
+    radial-gradient(circle at 22% 78%, white 0 1.1px, transparent 1.7px),
+    radial-gradient(circle at 56% 16%, white 0 0.7px, transparent 1.3px),
+    radial-gradient(circle at 84% 52%, white 0 0.9px, transparent 1.5px);
+  background-size: 210px 175px;
+  animation: galaxy-stars-wander 5.1s ease-in-out infinite alternate;
+}
+
+.group:hover .galaxy-stars,
+.group:hover .galaxy-stars::before,
+.group:hover .galaxy-stars::after {
+  animation-play-state: running;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .galaxy-stars,
+  .galaxy-stars::before,
+  .galaxy-stars::after {
+    animation: none;
+  }
+}

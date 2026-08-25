@@ -1,38 +1,21 @@
-// import { headers } from "next/headers"
-// import { redirect } from "next/navigation"
-// import { LogoutButton } from "@/components/auth/logout-button"
-// import { ConnectGoogleClassroom } from "@/components/integrations/connect-google-classroom"
-// import Link from "next/link"
-// import { auth } from "@/lib/auth"
-
-// export default async function Dashboard() {
-//   const session = await auth.api.getSession({
-//     headers: await headers(),
-//   })
-
-//   if (!session) {
-//     redirect("/login")
-//   }
-
-//   return (
-//     <main>
-//       <h1>Dashboard</h1>
-
-//       <p>Olá, {session.user.name}</p>
-//       <ConnectGoogleClassroom />
-//       <LogoutButton />
-//       <Link href="/disciplinas">Minhas matérias</Link>
-//     </main>
-//   )
-// }
-
 import { headers } from "next/headers"
+import Image from "next/image"
+import { SuccessConfettiIcon } from "@/components/animations/success-confetti/page"
+import { CompletionConfetti } from "@/components/dashboard/completion-confetti"
+import { AnimatedCard } from "@/components/dashboard/animated-card"
+import { InteractiveProgress } from "@/components/dashboard/interactive-progress"
+import { GalacticParticles } from "@/components/dashboard/galactic-particles"
+import { Sidebar } from "@/components/sidebar/sidebar"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { Bell, User, BookOpen, Flame, ChevronRight } from "lucide-react"
-import { LogoutButton } from "@/components/auth/logout-button"
+import {
+  BookOpen,
+  ChevronRight,
+  Flame,
+} from "lucide-react"
 import { ConnectGoogleClassroom } from "@/components/integrations/connect-google-classroom"
 import { auth } from "@/lib/auth"
+
 
 // TODO: substituir por dados reais (banco de dados / API) quando existirem.
 // Deixei tudo tipado e isolado aqui em cima pra ficar fácil de trocar por fetch depois.
@@ -82,13 +65,6 @@ const mockData = {
   ] as AgendaItem[],
 }
 
-function getGreeting() {
-  const hour = new Date().getHours()
-  if (hour < 12) return "Bom dia"
-  if (hour < 18) return "Boa tarde"
-  return "Boa noite"
-}
-
 export default async function Dashboard() {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -98,216 +74,183 @@ export default async function Dashboard() {
     redirect("/login")
   }
 
-  const firstName = session.user.name?.split(" ")[0] ?? session.user.name
-  const greeting = getGreeting()
-
-  const radius = 88
-  const circumference = 2 * Math.PI * radius
-  const dashOffset = circumference * (1 - mockData.focusProgress / 100)
-
   return (
-    <main className="min-h-screen bg-black px-6 py-8 text-white sm:px-10 lg:px-16">
-      <div className="mx-auto max-w-6xl">
-        {/* Header */}
-        <header className="mb-10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold tracking-tight">R</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-lime-400" />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/disciplinas"
-              className="hidden rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white/80 transition hover:border-white/20 hover:text-white sm:block"
-            >
-              Minhas matérias
-            </Link>
-            <button
-              type="button"
-              aria-label="Notificações"
-              className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white/5 transition hover:bg-white/10"
-            >
-              <Bell className="h-5 w-5 text-white/80" />
-              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-lime-400" />
-            </button>
-            <button
-              type="button"
-              aria-label="Perfil"
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/5 transition hover:bg-white/10"
-            >
-              <User className="h-5 w-5 text-white/80" />
-            </button>
-            <LogoutButton />
-          </div>
-        </header>
-
-        {/* Greeting */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold sm:text-4xl">
-            {greeting}, {firstName}! 👋
-          </h1>
-          <p className="mt-1 text-white/50">Foco hoje, conquista sempre.</p>
-        </div>
-
+    <main className="flex min-h-screen items-center bg-[#F6F5F1] px-6 pb-32 pt-8 text-[#111111] sm:px-10 lg:px-16">
+      <div className="mx-auto w-full max-w-6xl">
         {/* Integrations banner */}
-        <div className="mb-8">
-          <ConnectGoogleClassroom />
-        </div>
+
 
         {/* Main grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Progresso de hoje */}
-          <section className="rounded-3xl border border-white/5 bg-[#0d0d0d] p-6 sm:p-7">
-            <h2 className="mb-6 text-lg font-semibold">Progresso de hoje</h2>
-            <div className="flex items-center justify-center gap-4 sm:justify-start">
+          <AnimatedCard
+            delay={0.05}
+            className="group relative overflow-hidden rounded-3xl border border-black/5 bg-white p-6 sm:p-7"
+          >
+            <Image
+              src="/BannerDashboardOrigi.png"
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-black/45 opacity-0 transition-opacity duration-1000 ease-in-out group-hover:opacity-100" />
+            <h2 className="relative z-10 mb-6 text-lg font-semibold transition-colors duration-700 group-hover:text-white">Progresso de hoje</h2>
+            <div className="relative z-10 flex items-center justify-start">
               <div className="relative h-52 w-52 shrink-0">
-                <svg viewBox="0 0 200 200" className="h-full w-full -rotate-90">
-                  <circle
-                    cx="100"
-                    cy="100"
-                    r={radius}
-                    fill="none"
-                    stroke="rgba(255,255,255,0.08)"
-                    strokeWidth="14"
-                  />
-                  <circle
-                    cx="100"
-                    cy="100"
-                    r={radius}
-                    fill="none"
-                    stroke="#a3e635"
-                    strokeWidth="14"
-                    strokeLinecap="round"
-                    strokeDasharray={circumference}
-                    strokeDashoffset={dashOffset}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-5xl font-bold">
-                    {mockData.focusProgress}%
-                  </span>
-                  <span className="mt-1 text-sm text-white/50">
-                    Foco do dia
-                  </span>
-                </div>
+                <div className="absolute inset-2 rounded-full bg-white/30 backdrop-blur-md" />
+                <InteractiveProgress progress={mockData.focusProgress} />
               </div>
             </div>
-          </section>
+          </AnimatedCard>
 
           {/* Próxima tarefa */}
-          <section className="rounded-3xl border border-white/5 bg-[#0d0d0d] p-6 sm:p-7">
-            <h2 className="mb-6 text-lg font-semibold">Próxima tarefa</h2>
-            <div className="mb-6 flex items-center gap-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-lime-400">
-                <BookOpen className="h-7 w-7 text-black" />
+          <AnimatedCard
+            delay={0.12}
+            className="group relative overflow-hidden rounded-3xl border border-black/5 bg-white p-6 sm:p-7"
+          >
+            <Image
+              src="/BannerDashboard66.png"
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="scale-[1.02] object-cover transition-[filter,transform] duration-1000 ease-in-out group-hover:scale-[1.04] group-hover:blur-[4px]"
+            />
+            <h2 className="relative z-10 mb-6 text-lg font-semibold text-white">Próxima tarefa</h2>
+            <div className="relative z-10 mb-6 flex items-center gap-4">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#50D05C]">
+                <BookOpen className="h-7 w-7 text-white" />
               </div>
               <div>
-                <p className="text-xl font-semibold">
+                <p className="text-xl font-semibold text-white">
                   {mockData.nextTask.title}
                 </p>
-                <p className="text-white/50">{mockData.nextTask.subtitle}</p>
+                <p className="text-white/70">{mockData.nextTask.subtitle}</p>
               </div>
             </div>
 
-            <div className="mb-6 flex items-center gap-3">
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+            <div className="relative z-10 mb-6 flex items-center gap-3">
+              <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/10">
                 <div
-                  className="h-full rounded-full bg-lime-400"
+                  className="h-full rounded-full bg-[#50D05C]"
                   style={{ width: `${mockData.nextTask.progress}%` }}
                 />
               </div>
-              <span className="text-sm font-medium text-white/70">
+              <span className="text-sm font-medium text-white/80">
                 {mockData.nextTask.progress}%
               </span>
             </div>
 
-            <button
-              type="button"
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-lime-400 py-4 text-base font-semibold text-black transition hover:bg-lime-300"
-            >
-              Continuar
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </section>
+            <Link href="/disciplinas" className="relative z-10 mt-3 block text-center text-sm font-medium text-[#50D05C] hover:text-[#45B950]">
+
+              <button
+                type="button"
+                className="cursor-pointer flex w-full items-center justify-center gap-2 rounded-2xl bg-[#50D05C] py-4 text-base font-semibold text-white transition hover:bg-[#45B950]"
+              >
+                Continuar
+                <ChevronRight className="h-5 w-5" />
+              </button>
+            </Link>
+          </AnimatedCard>
 
           {/* Sequência */}
-          <section className="rounded-3xl border border-white/5 bg-[#0d0d0d] p-6 sm:p-7">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Sequência</h2>
-              <span className="flex items-center gap-1.5 text-sm font-medium text-white/80">
-                <Flame className="h-4 w-4 fill-orange-500 text-orange-500" />
+          <AnimatedCard
+            delay={0.19}
+            className="group relative flex flex-col overflow-hidden rounded-3xl border border-black/5 bg-white p-4 sm:p-7"
+          >
+            <Image
+              src="/BannerDashboard4.png"
+              alt=""
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-[#080B1B]/80 opacity-0 transition-opacity duration-1000 ease-in-out group-hover:opacity-100" />
+            <GalacticParticles />
+            <CompletionConfetti />
+            <div className="relative z-10 flex items-center justify-between">
+              <h2 className="text-lg font-semibold transition-colors duration-700 group-hover:text-white">Sequência</h2>
+              <span className="flex items-center gap-1.5 text-sm font-medium text-black/70 transition-colors duration-700 group-hover:text-white/80">
+                <img src="fire_1f525.png" width="16" height="16" alt="" />
                 {mockData.streak.days} dias
               </span>
             </div>
-            <div className="grid grid-cols-7 gap-2 text-center">
-              {mockData.streak.week.map((day, i) => (
-                <div key={i} className="flex flex-col items-center gap-2">
-                  <span className="text-xs text-white/40">{day.label}</span>
-                  <div
-                    className={
-                      day.done
-                        ? "flex h-10 w-10 items-center justify-center rounded-full bg-lime-400 text-black"
-                        : "flex h-10 w-10 items-center justify-center rounded-full border border-white/20"
-                    }
-                  >
-                    {day.done && (
-                      <svg
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        className="h-4 w-4"
-                      >
-                        <path
-                          d="M4 10.5L8 14.5L16 6.5"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+            <div className="relative z-10 grid flex-1 grid-cols-7 items-center gap-2 py-6 text-center">
+              {mockData.streak.week.map((day, index) => (
+                <div
+                  key={`${day.label}-${index}`}
+                  className="flex min-w-0 flex-col items-center gap-3"
+                >
+                  <span className="text-xs text-black/40 transition-colors duration-700 group-hover:text-white/60">
+                    {day.label}
+                  </span>
+
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-visible">
+                    {day.done ? (
+                      <SuccessConfettiIcon className="h-12 w-12 scale-[2.2]" />
+                    ) : (
+                      <div className="h-12 w-12 rounded-full border border-black/15 bg-white transition-colors duration-700 group-hover:border-white/30 group-hover:bg-white/10" />
                     )}
                   </div>
                 </div>
               ))}
             </div>
-          </section>
+          </AnimatedCard>
 
           {/* Agenda de hoje */}
-          <section className="rounded-3xl border border-white/5 bg-[#0d0d0d] p-6 sm:p-7">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Agenda de hoje</h2>
+          <AnimatedCard
+            delay={0.26}
+            className="group relative overflow-hidden rounded-3xl border border-black/5 bg-white p-6 sm:p-7"
+          >
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-[#11152F] via-[#25205A] to-[#351B5E] opacity-0 transition-opacity duration-1000 ease-in-out group-hover:opacity-100" />
+            <GalacticParticles />
+            <div className="absolute right-6 top-1/2 size-[152px] -translate-y-1/2 transition-[filter,transform] duration-1000 group-hover:brightness-110 group-hover:saturate-125">
+              <Image
+                src="/BannerDashboard8.png"
+                alt=""
+                fill
+                sizes="152px"
+                className="object-contain"
+              />
+            </div>
+            <div className="relative z-10 mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold transition-colors duration-700 group-hover:text-white">Agenda de hoje</h2>
               <Link
                 href="/agenda"
-                className="flex items-center gap-1 text-sm font-medium text-lime-400 hover:text-lime-300"
+                className="flex items-center gap-1 text-sm font-medium text-[#50D05C] hover:text-[#45B950]"
               >
                 Ver tudo
                 <ChevronRight className="h-4 w-4" />
+
               </Link>
             </div>
-            <div className="divide-y divide-white/5">
+            <div className="relative z-10 w-[72%] divide-y divide-black/5 transition-colors duration-700 group-hover:divide-white/10">
               {mockData.agenda.map((item) => (
                 <div key={item.id} className="flex items-center gap-4 py-3">
                   <div
                     className={
                       item.accent === "purple"
-                        ? "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-500 text-lg font-semibold italic"
-                        : "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-500"
+                        ? "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-500 text-lg font-semibold italic text-white"
+                        : "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-500 text-white"
                     }
                   >
                     {item.accent === "purple" ? "∫x" : "⚛"}
                   </div>
-                  <span className="w-14 shrink-0 text-sm text-white/50">
+                  <span className="w-14 shrink-0 text-sm text-black/50 transition-colors duration-700 group-hover:text-white/60">
                     {item.time}
                   </span>
                   <div>
-                    <p className="font-semibold">{item.title}</p>
-                    <p className="text-sm text-white/50">{item.subtitle}</p>
+                    <p className="font-semibold transition-colors duration-700 group-hover:text-white">{item.title}</p>
+                    <p className="text-sm text-black/50 transition-colors duration-700 group-hover:text-white/60">{item.subtitle}</p>
                   </div>
                 </div>
               ))}
             </div>
-          </section>
+          </AnimatedCard>
         </div>
       </div>
+
+      <Sidebar />
     </main>
   )
-}
+} 

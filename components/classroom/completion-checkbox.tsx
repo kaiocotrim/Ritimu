@@ -10,6 +10,8 @@ type CompletionCheckboxProps = {
   label: string
 }
 
+const COMPLETION_CONFETTI_KEY = "ritimu:show-completion-confetti"
+
 export function CompletionCheckbox({
   courseId,
   itemKey,
@@ -33,6 +35,9 @@ export function CompletionCheckbox({
     if (!response?.ok) {
       setCompleted(!nextCompleted)
     } else {
+      if (nextCompleted) {
+        sessionStorage.setItem(COMPLETION_CONFETTI_KEY, "true")
+      }
       router.refresh()
     }
 

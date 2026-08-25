@@ -1,4 +1,4 @@
-import { BookOpen, ExternalLink } from "lucide-react"
+import { ArrowLeft, BookOpen, ExternalLink, FileText } from "lucide-react"
 import { headers } from "next/headers"
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
@@ -195,65 +195,104 @@ export default async function DisciplinaPage({
     completedKeys = new Set(completedItems.map((item) => item.itemKey))
   }
 
+  const totalItems = itemKeys.length
+  const completedCount = completedKeys.size
+  const progressPercent =
+    totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0
+
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:py-12">
-      <header className="border-b pb-8">
-        <p className="text-sm font-medium text-muted-foreground">
-          {course.section || "Google Classroom"}
-        </p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">
-          {course.name}
-        </h1>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Atividades organizadas pelos tópicos da disciplina.
-        </p>
-      </header>
+    <main className="min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-8 text-[#111111] sm:px-8 lg:px-16">
+      <div className="mx-auto max-w-5xl">
+        <Link
+          href="/disciplinas"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-black/50 hover:text-black/80"
+        >
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          Minhas matérias
+        </Link>
 
-      <section className="mt-8" aria-labelledby="activities-title">
-        <h2 id="activities-title" className="text-xl font-semibold">
-          Atividades
-        </h2>
+        {/* Header */}
+        <header className="mb-8 rounded-3xl bg-black px-6 py-7 text-white sm:px-8">
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div>
+              <p className="text-sm font-medium text-white/50">
+                {course.section || "Google Classroom"}
+              </p>
+              <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
+                {course.name}
+              </h1>
+              <p className="mt-2 text-sm text-white/50">
+                Atividades organizadas pelos tópicos da disciplina.
+              </p>
+            </div>
 
-        {integrationError && (
-          <div className="mt-5 rounded-3xl border border-destructive/20 bg-destructive/5 p-5 text-sm text-destructive">
-            {integrationError}
-          </div>
-        )}
-
-        {!integrationError &&
-          topics.length === 0 &&
-          assignments.length === 0 &&
-          courseMaterials.length === 0 && (
-          <div className="mt-5 rounded-3xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-            Nenhum tópico ou atividade foi encontrado nesta disciplina.
-          </div>
-        )}
-
-        {!integrationError && (
-          <div className="mt-5 space-y-5">
-            {topics.map((topic) => (
-              <TopicSection
-                key={topic.topicId}
-                title={topic.name}
-                courseId={course.id}
-                assignments={assignmentsByTopic.get(topic.topicId) ?? []}
-                materials={materialsByTopic.get(topic.topicId) ?? []}
-                completedKeys={completedKeys}
-              />
-            ))}
-
-            {(unassigned.length > 0 || unassignedMaterials.length > 0) && (
-              <TopicSection
-                title="Outros"
-                courseId={course.id}
-                assignments={unassigned}
-                materials={unassignedMaterials}
-                completedKeys={completedKeys}
-              />
+            {!integrationError && totalItems > 0 && (
+              <div className="min-w-[160px]">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/50">Progresso</span>
+                  <span className="font-semibold">{progressPercent}%</span>
+                </div>
+                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10 sm:w-40">
+                  <div
+                    className="h-full rounded-full bg-lime-400"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                <p className="mt-1.5 text-xs text-white/40">
+                  {completedCount} de {totalItems} concluídos
+                </p>
+              </div>
             )}
           </div>
-        )}
-      </section>
+        </header>
+
+        {/* Atividades */}
+        <section aria-labelledby="activities-title">
+          <h2 id="activities-title" className="mb-4 text-xl font-semibold">
+            Atividades
+          </h2>
+
+          {integrationError && (
+            <div className="rounded-3xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+              {integrationError}
+            </div>
+          )}
+
+          {!integrationError &&
+            topics.length === 0 &&
+            assignments.length === 0 &&
+            courseMaterials.length === 0 && (
+              <div className="rounded-3xl border border-dashed border-black/15 bg-white/60 p-8 text-center text-sm text-black/45">
+                Nenhum tópico ou atividade foi encontrado nesta disciplina.
+              </div>
+            )}
+
+          {!integrationError && (
+            <div className="space-y-5">
+              {topics.map((topic) => (
+                <TopicSection
+                  key={topic.topicId}
+                  title={topic.name}
+                  courseId={course.id}
+                  assignments={assignmentsByTopic.get(topic.topicId) ?? []}
+                  materials={materialsByTopic.get(topic.topicId) ?? []}
+                  completedKeys={completedKeys}
+                />
+              ))}
+
+              {(unassigned.length > 0 || unassignedMaterials.length > 0) && (
+                <TopicSection
+                  title="Outros"
+                  courseId={course.id}
+                  assignments={unassigned}
+                  materials={unassignedMaterials}
+                  completedKeys={completedKeys}
+                />
+              )}
+            </div>
+          )}
+        </section>
+      </div>
     </main>
   )
 }
@@ -271,22 +310,23 @@ function TopicSection({
   materials: GoogleClassroomCourseWorkMaterial[]
   completedKeys: Set<string>
 }) {
+  const itemCount = assignments.length + materials.length
+
   return (
-    <section className="overflow-hidden rounded-3xl border bg-card">
-      <div className="border-b bg-muted/40 px-5 py-4 sm:px-6">
+    <section className="overflow-hidden rounded-3xl border border-black/5 bg-white">
+      <div className="border-b border-black/5 bg-black/[0.02] px-5 py-4 sm:px-6">
         <h3 className="font-semibold">{title}</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {assignments.length + materials.length}{" "}
-          {assignments.length + materials.length === 1 ? "item" : "itens"}
+        <p className="mt-1 text-xs text-black/45">
+          {itemCount} {itemCount === 1 ? "item" : "itens"}
         </p>
       </div>
 
-      {assignments.length === 0 && materials.length === 0 ? (
-        <p className="px-5 py-5 text-sm text-muted-foreground sm:px-6">
+      {itemCount === 0 ? (
+        <p className="px-5 py-5 text-sm text-black/45 sm:px-6">
           Nenhuma atividade neste tópico.
         </p>
       ) : (
-        <div className="divide-y">
+        <div className="divide-y divide-black/5">
           {assignments.map((assignment) => {
             const activityUrl = getAssignmentUrl(assignment)
             const itemKey = `coursework:${assignment.id}`
@@ -296,48 +336,48 @@ function TopicSection({
                 key={assignment.id}
                 className="flex items-start gap-4 px-5 py-4 sm:px-6"
               >
-              <CompletionCheckbox
-                courseId={courseId}
-                itemKey={itemKey}
-                initialCompleted={completedKeys.has(itemKey)}
-                label={`Marcar ${assignment.title} como concluída`}
-              />
-              <div className="mt-0.5 rounded-2xl bg-muted p-2.5">
-                <BookOpen className="size-4" aria-hidden="true" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="font-medium leading-6">
-                  <Link
-                    href={`/disciplinas/${courseId}/atividades/${assignment.id}`}
-                    className="hover:underline"
-                  >
-                    {assignment.title}
-                  </Link>
-                </h4>
-                {assignment.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                    {assignment.description}
-                  </p>
-                )}
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  {assignment.workType && <span>{assignment.workType}</span>}
-                  {assignment.maxPoints != null && (
-                    <span>{assignment.maxPoints} pontos</span>
-                  )}
+                <CompletionCheckbox
+                  courseId={courseId}
+                  itemKey={itemKey}
+                  initialCompleted={completedKeys.has(itemKey)}
+                  label={`Marcar ${assignment.title} como concluída`}
+                />
+                <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-2xl bg-lime-400/20 text-lime-700">
+                  <BookOpen className="size-4" aria-hidden="true" />
                 </div>
-              </div>
-              {activityUrl && (
-                <a
-                  href={activityUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Abrir recurso externo de ${assignment.title}`}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                >
-                  <span className="hidden sm:inline">Abrir atividade</span>
-                  <ExternalLink className="size-4" aria-hidden="true" />
-                </a>
-              )}
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-medium leading-6">
+                    <Link
+                      href={`/disciplinas/${courseId}/atividades/${assignment.id}`}
+                      className="hover:underline"
+                    >
+                      {assignment.title}
+                    </Link>
+                  </h4>
+                  {assignment.description && (
+                    <p className="mt-1 line-clamp-2 text-sm text-black/45">
+                      {assignment.description}
+                    </p>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-black/40">
+                    {assignment.workType && <span>{assignment.workType}</span>}
+                    {assignment.maxPoints != null && (
+                      <span>{assignment.maxPoints} pontos</span>
+                    )}
+                  </div>
+                </div>
+                {activityUrl && (
+                  <a
+                    href={activityUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Abrir recurso externo de ${assignment.title}`}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-black/50 transition-colors hover:bg-black/5 hover:text-black"
+                  >
+                    <span className="hidden sm:inline">Abrir atividade</span>
+                    <ExternalLink className="size-4" aria-hidden="true" />
+                  </a>
+                )}
               </article>
             )
           })}
@@ -356,16 +396,18 @@ function TopicSection({
                   initialCompleted={completedKeys.has(itemKey)}
                   label={`Marcar ${material.title} como concluído`}
                 />
-                <div className="mt-0.5 rounded-2xl bg-muted p-2.5">
-                  <BookOpen className="size-4" aria-hidden="true" />
+                <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-2xl bg-sky-500/15 text-sky-700">
+                  <FileText className="size-4" aria-hidden="true" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <p className="text-xs font-medium uppercase tracking-wide text-black/40">
                     Material
                   </p>
-                  <h4 className="mt-1 font-medium leading-6">{material.title}</h4>
+                  <h4 className="mt-1 font-medium leading-6">
+                    {material.title}
+                  </h4>
                   {material.description && (
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                    <p className="mt-1 line-clamp-2 text-sm text-black/45">
                       {material.description}
                     </p>
                   )}
@@ -376,7 +418,7 @@ function TopicSection({
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`Abrir material ${material.title}`}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-black/50 transition-colors hover:bg-black/5 hover:text-black"
                   >
                     <span className="hidden sm:inline">Abrir material</span>
                     <ExternalLink className="size-4" aria-hidden="true" />
