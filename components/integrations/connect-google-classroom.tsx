@@ -10,6 +10,10 @@ export function ConnectGoogleClassroom() {
       provider: "google",
       callbackURL: "/dashboard",
       scopes: [...GOOGLE_CLASSROOM_SCOPES],
+      additionalParams: {
+        prompt: "consent",
+        access_type: "offline",
+      },
     })
   }
 

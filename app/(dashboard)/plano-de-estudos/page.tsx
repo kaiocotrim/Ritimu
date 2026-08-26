@@ -2,6 +2,7 @@
 import { Grafico } from "@/components/animations/Grafico/page"
 import { BusinessmanBalancing } from "@/components/animations/BusinessmanBalancing/page"
 import { SmoothMoonwalk } from "@/components/animations/Smooth-Moonwalk/page"
+import Image from "next/image"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { GoodVibesIcon } from "@/components/animations/GoodVibes/page"
@@ -205,12 +206,28 @@ export default function StudyPlanPage() {
         )}
 
         <section className="mb-6 grid gap-4 sm:grid-cols-3">
-          <Summary label="Tempo planejado" value={`${plan?.totalMinutes ?? 0} min`} icon={<SmoothMoonwalk />} />
+          <Summary
+            label="Tempo planejado"
+            value={`${plan?.totalMinutes ?? 0} min`}
+            icon={<SmoothMoonwalk />}
+            imageSrc="/palco.png"
+          />
           <Summary
             label="Sessões"
             value={`${completed}/${plan?.sessions.length ?? 0}`}
-            icon={<LoaderCatIcon />} />
-          <Summary label="Progresso do dia"  value={`${progress}%`} icon={<GoodVibesIcon />} />
+            icon={<LoaderCatIcon className="h-16 w-16" />}
+            imageSrc="/planetaDesenho.png"
+            imageIconClassName="right-[8.5rem] top-9 h-16 w-16"
+            darkImage
+          />
+          <Summary
+            label="Progresso do dia"
+            value={`${progress}%`}
+            icon={<GoodVibesIcon />}
+            imageSrc="/Parque.png"
+            imageIconClassName="bottom-0 left-1/2 h-16 w-16 -translate-x-1/2"
+            noImageOverlay
+          />
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[1fr_300px]">
@@ -441,16 +458,46 @@ function Summary({
   label,
   value,
   icon,
+  imageSrc,
+  imageIconClassName,
+  inlineIcon = false,
+  noImageOverlay = false,
+  darkImage = false,
 }: {
   label: string
   value: string
-  icon: React.ReactNode
+  icon?: React.ReactNode
+  imageSrc?: string
+  imageIconClassName?: string
+  inlineIcon?: boolean
+  noImageOverlay?: boolean
+  darkImage?: boolean
 }) {
   return (
-    <div className="rounded-2xl border border-black/[.06] bg-white p-5">
-      <div className="mb-4 size-5 text-[#50d05c]">{icon}</div>
-      <p className="text-sm text-black/40">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
+    <div className="relative overflow-hidden rounded-2xl border border-black/[.06] bg-white p-5">
+      {imageSrc && <Image src={imageSrc} alt="" fill sizes="(min-width: 640px) 33vw, 100vw" className="object-cover object-center" />}
+      {imageSrc && !noImageOverlay && (
+        <div
+          className={`absolute inset-0 ${
+            darkImage
+              ? "bg-gradient-to-r from-black/55 via-black/15 to-transparent"
+              : "bg-gradient-to-r from-white via-white/90 to-white/10"
+          }`}
+        />
+      )}
+      {imageSrc && icon && !inlineIcon && (
+        <div
+          className={`absolute z-20 text-[#50d05c] ${imageIconClassName ?? "-bottom-1 right-6 h-24 w-24"}`}
+        >
+          {icon}
+        </div>
+      )}
+      <div className="relative z-10">
+        {imageSrc && icon && !inlineIcon && <div aria-hidden className="mb-4 size-5" />}
+        {(!imageSrc || inlineIcon) && icon && <div className="mb-4 size-5 text-[#50d05c]">{icon}</div>}
+        <p className={`text-sm ${darkImage ? "text-white/75" : "text-black/45"}`}>{label}</p>
+        <p className={`mt-1 text-2xl font-semibold ${darkImage ? "text-white" : ""}`}>{value}</p>
+      </div>
     </div>
   )
 }
