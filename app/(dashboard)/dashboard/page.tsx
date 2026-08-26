@@ -88,7 +88,7 @@ export default async function Dashboard() {
             className="group relative overflow-hidden rounded-3xl border border-black/5 bg-white p-6 sm:p-7"
           >
             <Image
-              src="/BannerDashboardOrigi.png"
+              src="/BannerDashboard100.png"
               alt=""
               fill
               sizes="(min-width: 1024px) 50vw, 100vw"

@@ -5,6 +5,14 @@ export const GOOGLE_CLASSROOM_SCOPES = [
   "https://www.googleapis.com/auth/classroom.topics.readonly",
 ] as const
 
+export const GOOGLE_CALENDAR_SCOPE =
+  "https://www.googleapis.com/auth/calendar.events" as const
+
+export const GOOGLE_RITIMU_SCOPES = [
+  ...GOOGLE_CLASSROOM_SCOPES,
+  GOOGLE_CALENDAR_SCOPE,
+] as const
+
 export type GoogleClassroomTopic = {
   courseId: string
   topicId: string
