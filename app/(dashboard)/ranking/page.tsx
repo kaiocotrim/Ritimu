@@ -1,8 +1,9 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
-import { Crown, Medal, Sparkles, TrendingUp, Trophy } from "lucide-react"
+import { Medal, Sparkles, TrendingUp, Trophy } from "lucide-react"
 
 import { AnimatedCard, AnimatedItem } from "@/components/dashboard/animated-card"
+import { TrophyIcon } from "@/components/animations/Trophy/page"
 import { Sidebar } from "@/components/sidebar/sidebar"
 import { auth } from "@/lib/auth"
 
@@ -84,17 +85,19 @@ export default async function RankingPage() {
             return (
               <AnimatedItem
                 key={student.name}
-                delay={0.12 + index * 0.07}
+                delay={0.12 + (3 - position) * 0.4}
                 className={`relative flex flex-col items-center rounded-3xl border bg-white p-6 text-center shadow-sm ${
                   isChampion ? "border-[#50D05C]/40 sm:-translate-y-2" : "border-black/5"
                 }`}
               >
-                {isChampion && (
-                  <Crown className="mb-2 size-7 fill-amber-400 text-amber-500" aria-hidden="true" />
-                )}
                 <div className={`flex size-16 items-center justify-center rounded-full text-lg font-bold text-white ${student.color}`}>
                   {student.initials}
                 </div>
+                {isChampion && (
+                  <div className="mt-2" aria-hidden="true">
+                    <TrophyIcon />
+                  </div>
+                )}
                 <span className="mt-3 text-xs font-semibold uppercase tracking-wider text-black/35">
                   {position}º lugar
                 </span>

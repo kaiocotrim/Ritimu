@@ -217,7 +217,8 @@ export default function StudyPlanPage() {
             value={`${completed}/${plan?.sessions.length ?? 0}`}
             icon={<LoaderCatIcon className="h-16 w-16" />}
             imageSrc="/planetaDesenho.png"
-            imageIconClassName="right-[8.5rem] top-9 h-16 w-16"
+            imageIconClassName="h-16 w-16 -translate-x-1/2 -translate-y-1/2"
+            imageIconStyle={{ left: "calc(50% - 19px)", top: "calc(50% + 6px)" }}
             darkImage
           />
           <Summary
@@ -460,6 +461,7 @@ function Summary({
   icon,
   imageSrc,
   imageIconClassName,
+  imageIconStyle,
   inlineIcon = false,
   noImageOverlay = false,
   darkImage = false,
@@ -469,6 +471,7 @@ function Summary({
   icon?: React.ReactNode
   imageSrc?: string
   imageIconClassName?: string
+  imageIconStyle?: React.CSSProperties
   inlineIcon?: boolean
   noImageOverlay?: boolean
   darkImage?: boolean
@@ -487,6 +490,7 @@ function Summary({
       )}
       {imageSrc && icon && !inlineIcon && (
         <div
+          style={imageIconStyle}
           className={`absolute z-20 text-[#50d05c] ${imageIconClassName ?? "-bottom-1 right-6 h-24 w-24"}`}
         >
           {icon}
