@@ -74,6 +74,7 @@ export default async function Dashboard() {
     redirect("/login")
   }
 
+
   return (
     <main className="flex min-h-screen items-center bg-[#F6F5F1] px-6 pb-32 pt-8 text-[#111111] sm:px-10 lg:px-16">
       <div className="mx-auto w-full max-w-6xl">

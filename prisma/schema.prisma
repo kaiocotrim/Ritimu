@@ -22,6 +22,11 @@ model User {
   classroomCourses         ClassroomCourse[]
   classroomItemCompletions ClassroomItemCompletion[]
   calendarEvents           CalendarEvent[]
+  studyPreference          StudyPreference?
+  studyAvailabilities      StudyAvailability[]
+  studySubjectPreferences  StudySubjectPreference[]
+  studyPlans               StudyPlan[]
+  studyContents            StudyContent[]
 
   @@unique([email])
   @@map("user")
@@ -89,9 +94,12 @@ model ClassroomCourse {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  assignments     ClassroomAssignment[]
-  itemCompletions ClassroomItemCompletion[]
-  totalItems      Int                       @default(0)
+  assignments      ClassroomAssignment[]
+  itemCompletions  ClassroomItemCompletion[]
+  studyPreferences StudySubjectPreference[]
+  studySessions    StudySession[]
+  studyContents    StudyContent[]
+  totalItems       Int                       @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -113,14 +121,159 @@ model ClassroomAssignment {
   workType     String?
   classroomUrl String?
 
-  courseId       String
-  course         ClassroomCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  calendarEvents CalendarEvent[]
+  courseId         String
+  course           ClassroomCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  calendarEvents   CalendarEvent[]
+  studySessions    StudySession[]
+  importance       Int             @default(3)
+  estimatedMinutes Int             @default(40)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([courseId, googleAssignmentId])
+  @@index([courseId])
+}
+
+enum StudySessionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  MISSED
+  RESCHEDULED
+  CANCELED
+}
+
+enum StudyPlanPeriodType {
+  DAILY
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+enum StudyPlanStatus {
+  CONFIRMED
+  CANCELED
+}
+
+enum CalendarSyncStatus {
+  NOT_REQUESTED
+  PENDING
+  SYNCED
+  FAILED
+}
+
+model StudyPreference {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultSessionMinutes Int      @default(40)
+  breakMinutes          Int      @default(10)
+  maxDailyMinutes       Int      @default(120)
+  studyOnWeekends       Boolean  @default(false)
+  timeZone              String   @default("America/Sao_Paulo")
+  syncWithGoogleDefault Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model StudyAvailability {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekday   Int
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, weekday])
+  @@index([userId])
+}
+
+model StudySubjectPreference {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     ClassroomCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  difficulty Int             @default(3)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+}
+
+model StudyPlan {
+  id             String              @id @default(cuid())
+  userId         String
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planDate       DateTime
+  periodType     StudyPlanPeriodType @default(DAILY)
+  startDate      DateTime?
+  endDate        DateTime?
+  status         StudyPlanStatus     @default(CONFIRMED)
+  syncWithGoogle Boolean             @default(false)
+  confirmedAt    DateTime?
+  totalMinutes   Int                 @default(0)
+  sessions       StudySession[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([userId, planDate])
+  @@index([userId, planDate])
+}
+
+model StudySession {
+  id                    String               @id @default(cuid())
+  studyPlanId           String
+  studyPlan             StudyPlan            @relation(fields: [studyPlanId], references: [id], onDelete: Cascade)
+  courseId              String?
+  course                ClassroomCourse?     @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  classroomAssignmentId String?
+  classroomAssignment   ClassroomAssignment? @relation(fields: [classroomAssignmentId], references: [id], onDelete: SetNull)
+  calendarEvent         CalendarEvent?
+  studyContentId        String?
+  studyContent          StudyContent?        @relation(fields: [studyContentId], references: [id], onDelete: SetNull)
+  title                 String
+  description           String?
+  subjectName           String?
+  externalTaskId        String?
+  externalUrl           String?
+  priorityReason        String?
+  priorityScore         Int
+  scheduledStart        DateTime
+  scheduledEnd          DateTime
+  status                StudySessionStatus   @default(PENDING)
+  completedAt           DateTime?
+  durationMinutes       Int                  @default(40)
+  syncStatus            CalendarSyncStatus   @default(NOT_REQUESTED)
+  syncError             String?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@index([studyPlanId, scheduledStart])
+  @@index([classroomAssignmentId])
+  @@index([courseId])
+  @@index([studyContentId])
+}
+
+model StudyContent {
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId         String?
+  course           ClassroomCourse? @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  title            String
+  description      String?
+  dueDate          DateTime?
+  importance       Int              @default(3)
+  estimatedMinutes Int              @default(40)
+  studied          Boolean          @default(false)
+  sessions         StudySession[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([userId, studied])
   @@index([courseId])
 }
 
@@ -161,6 +314,8 @@ model CalendarEvent {
   googleUpdatedAt       DateTime?
   classroomAssignmentId String?
   classroomAssignment   ClassroomAssignment? @relation(fields: [classroomAssignmentId], references: [id], onDelete: SetNull)
+  studySessionId        String?              @unique
+  studySession          StudySession?        @relation(fields: [studySessionId], references: [id], onDelete: Cascade)
   userId                String
   user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt             DateTime             @default(now())

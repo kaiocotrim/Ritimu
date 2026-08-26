@@ -87,9 +87,10 @@ export default async function DisciplinaPage({
     notFound()
   }
 
-  const googleAccount = await prisma.account.findFirst({
+  const googleAccounts = await prisma.account.findMany({
     where: { userId: session.user.id, providerId: "google" },
     select: { id: true },
+    orderBy: { updatedAt: "desc" },
   })
 
   let topics: GoogleClassroomTopic[] = []
@@ -97,38 +98,30 @@ export default async function DisciplinaPage({
   let courseMaterials: GoogleClassroomCourseWorkMaterial[] = []
   let integrationError: string | null = null
 
-  if (!googleAccount) {
+  if (!googleAccounts.length) {
     integrationError = "Google Classroom não conectado."
   } else {
-    try {
-      const { accessToken } = await auth.api.getAccessToken({
-        body: { accountId: googleAccount.id },
-        headers: requestHeaders,
-      })
-      const coursePath = `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(course.googleCourseId)}`
-
-      ;[topics, assignments, courseMaterials] = await Promise.all([
-        fetchAllClassroomItems<GoogleClassroomTopic>(
-          `${coursePath}/topics`,
-          accessToken,
-          "topic"
-        ),
-        fetchAllClassroomItems<GoogleClassroomCourseWork>(
-          `${coursePath}/courseWork`,
-          accessToken,
-          "courseWork"
-        ),
-        fetchAllClassroomItems<GoogleClassroomCourseWorkMaterial>(
-          `${coursePath}/courseWorkMaterials`,
-          accessToken,
-          "courseWorkMaterial"
-        ),
-      ])
-    } catch (error) {
-      integrationError =
-        error instanceof Error
-          ? error.message
-          : "Não foi possível carregar os dados do Google Classroom."
+    const coursePath = `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(course.googleCourseId)}`
+    let courseAccessible = false
+    for (const googleAccount of googleAccounts) {
+      try {
+        const { accessToken } = await auth.api.getAccessToken({ body: { accountId: googleAccount.id }, headers: requestHeaders })
+        const accessCheck = await fetch(coursePath, { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" })
+        if (!accessCheck.ok) continue
+        courseAccessible = true
+        ;[topics, assignments, courseMaterials] = await Promise.all([
+          fetchAllClassroomItems<GoogleClassroomTopic>(`${coursePath}/topics`, accessToken, "topic"),
+          fetchAllClassroomItems<GoogleClassroomCourseWork>(`${coursePath}/courseWork`, accessToken, "courseWork"),
+          fetchAllClassroomItems<GoogleClassroomCourseWorkMaterial>(`${coursePath}/courseWorkMaterials`, accessToken, "courseWorkMaterial"),
+        ])
+        integrationError = null
+        break
+      } catch {
+        continue
+      }
+    }
+    if (!courseAccessible) {
+      integrationError = "Nenhuma conta Google vinculada possui acesso a esta turma. Sincronize com a conta correta ou remova a disciplina antiga."
     }
   }
 

@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, Flag, Home, Trophy, User } from "lucide-react"
+import { BookOpen, Brain, Flag, Home, Trophy, User } from "lucide-react"
 
 const navigationItems = [
   { href: "/dashboard", label: "Início", Icon: Home },
   { href: "/disciplinas", label: "Matérias", Icon: BookOpen },
   { href: "/metas", label: "Missões", Icon: Flag },
+  { href: "/plano-de-estudos", label: "Meu plano", Icon: Brain },
   { href: "/ranking", label: "Ranking", Icon: Trophy },
   { href: "/perfil", label: "Perfil", Icon: User },
 ]
