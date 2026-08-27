@@ -144,6 +144,139 @@
   }
 }
 
+@layer components {
+  .planner-input {
+    @apply h-12 w-full rounded-2xl border border-black/10 bg-black/[.025] px-4 text-sm outline-none transition focus:border-black/25 focus:bg-white focus:ring-4 focus:ring-black/[.035];
+  }
+  .login-input {
+    @apply h-14 w-full rounded-2xl border border-black/10 bg-white pr-4 text-sm outline-none transition placeholder:text-black/25 focus:border-[#65C735]/60 focus:ring-4 focus:ring-[#65C735]/10;
+  }
+
+  .pixel-login {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  }
+
+  .pixel-login-card {
+    border-radius: 8px;
+    box-shadow: 10px 10px 0 #b8ef54, 14px 14px 0 #202128;
+  }
+
+  .pixel-login .login-input {
+    border-width: 2px;
+    border-radius: 4px;
+    box-shadow: inset 3px 3px 0 rgb(0 0 0 / 4%);
+  }
+
+  .pixel-login button,
+  .pixel-login a {
+    border-radius: 4px;
+  }
+
+  .pixel-login button[type="submit"] {
+    border: 2px solid #202128;
+    background: #77d530;
+    box-shadow: 4px 4px 0 #202128;
+  }
+
+  .pixel-login button[type="submit"]:active {
+    box-shadow: 1px 1px 0 #202128;
+    transform: translate(3px, 3px);
+  }
+  .planner-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .study-plan-black-theme section.bg-white {
+    background-color: #12151d !important;
+    color: white !important;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 8%);
+  }
+
+  .study-plan-black-theme section.bg-white [class*="text-black"] {
+    color: rgb(255 255 255 / 48%) !important;
+  }
+
+  .study-plan-black-theme section.bg-white strong.text-black {
+    color: white !important;
+  }
+
+  .study-plan-black-theme section.bg-white button.bg-black {
+    background-color: #50d05c !important;
+    color: black !important;
+    box-shadow: 0 8px 24px rgb(80 208 92 / 18%);
+  }
+
+  .study-plan-black-theme section.bg-white div[class*="bg-black/"] {
+    background-color: rgb(255 255 255 / 10%) !important;
+  }
+
+  .study-plan-black-theme section.bg-white [class*="border-black"],
+  .study-plan-black-theme section.bg-white [class*="divide-black"] > * + * {
+    border-color: rgb(255 255 255 / 12%) !important;
+  }
+
+  .study-plan-black-theme header select option {
+    background-color: #1d2028;
+    color: #f5f7fa;
+  }
+
+  .planner-modal-dark .planner-button.bg-black {
+    background-color: #50d05c !important;
+    color: #071109 !important;
+    box-shadow: 0 8px 24px rgb(80 208 92 / 20%);
+  }
+
+  .planner-modal-dark button.bg-black {
+    background-color: #50d05c !important;
+    color: #071109 !important;
+    box-shadow: 0 5px 16px rgb(80 208 92 / 20%);
+  }
+
+  .planner-modal-dark button[class*="bg-black/"] {
+    border: 1px solid rgb(255 255 255 / 8%);
+    background-color: rgb(255 255 255 / 6%) !important;
+    color: rgb(255 255 255 / 62%) !important;
+    transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+  }
+
+  .planner-modal-dark button[class*="bg-black/"]:hover {
+    border-color: rgb(80 208 92 / 22%);
+    background-color: rgb(80 208 92 / 10%) !important;
+    color: #67dc72 !important;
+  }
+
+  .planner-modal-dark .planner-button[class*="text-[#2F8F3A]"] {
+    border: 1px solid rgb(80 208 92 / 22%);
+    background-color: rgb(80 208 92 / 11%) !important;
+    color: #67dc72 !important;
+  }
+
+  .planner-modal-dark button.bg-red-50 {
+    border: 1px solid rgb(248 113 113 / 18%);
+    background-color: rgb(248 113 113 / 10%) !important;
+    color: #f87171 !important;
+  }
+
+  .planner-modal-dark button.bg-red-50:hover {
+    background-color: rgb(248 113 113 / 17%) !important;
+  }
+
+  .planner-modal-dark .planner-input {
+    color-scheme: dark;
+  }
+
+  .planner-modal-dark .planner-input option {
+    background-color: #1d2028;
+    color: #f5f7fa;
+  }
+}
+
+@media (min-width: 1280px) {
+  .study-plan-content {
+    zoom: 0.82;
+  }
+}
+
 @keyframes galaxy-stars-drift {
   0% {
     background-position: -12px -220px;
@@ -252,6 +385,57 @@
   .galaxy-stars,
   .galaxy-stars::before,
   .galaxy-stars::after {
+    animation: none;
+  }
+}
+
+@keyframes study-plan-theme-enter {
+  from {
+    background-color: #f6f5f1;
+  }
+  to {
+    background-color: #08090d;
+  }
+}
+
+@keyframes study-plan-space-glow-enter {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes study-plan-moon-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 24px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.study-plan-theme-enter {
+  animation: study-plan-theme-enter 700ms ease-out both;
+}
+
+.study-plan-space-glow {
+  animation: study-plan-space-glow-enter 900ms 120ms ease-out both;
+}
+
+.study-plan-moon {
+  animation: study-plan-moon-enter 1.1s 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .study-plan-theme-enter,
+  .study-plan-space-glow,
+  .study-plan-moon {
     animation: none;
   }
 }

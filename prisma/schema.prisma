@@ -173,6 +173,7 @@ model StudyPreference {
   studyOnWeekends       Boolean  @default(false)
   timeZone              String   @default("America/Sao_Paulo")
   syncWithGoogleDefault Boolean  @default(false)
+  plannerView           StudyPlanPeriodType?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
@@ -308,6 +309,10 @@ model CalendarEvent {
   source                CalendarEventSource  @default(RITIMU)
   type                  CalendarEventType    @default(STUDY)
   status                CalendarEventStatus  @default(PENDING)
+  routineType           String               @default("OTHER")
+  recurrence            String               @default("NONE")
+  recurrenceDays        Int[]                @default([])
+  recurrenceUntil       DateTime?
   googleEventId         String?
   googleCalendarId      String?
   syncedWithGoogle      Boolean              @default(false)
@@ -323,6 +328,7 @@ model CalendarEvent {
 
   @@unique([userId, googleCalendarId, googleEventId])
   @@index([userId, startAt])
+  @@index([userId, recurrence])
   @@index([classroomAssignmentId])
 }
 

@@ -7,6 +7,7 @@ type AnimatedCardProps = {
   children: ReactNode
   className?: string
   delay?: number
+  onAnimationComplete?: () => void
 }
 
 export function AnimatedCard({
@@ -37,6 +38,7 @@ export function AnimatedItem({
   children,
   className,
   delay = 0,
+  onAnimationComplete,
 }: AnimatedCardProps) {
   const reduceMotion = useReducedMotion()
 
@@ -51,6 +53,7 @@ export function AnimatedItem({
           : { scale: 1.008, transition: { duration: 0.35, ease: "easeOut" } }
       }
       transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
+      onAnimationComplete={onAnimationComplete}
     >
       {children}
     </motion.div>

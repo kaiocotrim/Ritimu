@@ -12,13 +12,13 @@ import {
   ChevronDown,
   Code2,
   Database,
-  Plus,
   Sigma,
   Target,
 } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { SyncGoogleClassroom } from "@/components/integrations/sync-google-classroom"
+import { CreateManualCourse } from "@/components/classroom/create-manual-course"
 import { AnimatedCard, AnimatedItem } from "@/components/dashboard/animated-card"
 import { Sidebar } from "@/components/sidebar/sidebar"
 
@@ -134,7 +134,9 @@ export default async function DisciplinasPage({
               Continue sua jornada. Cada aula te aproxima do seu objetivo! 🚀
             </p>
           </div>
-          <SyncGoogleClassroom />
+          <SyncGoogleClassroom
+            initiallySynced={courses.length > 0}
+          />
         </div>
 
         {/* Hero banner */}
@@ -249,6 +251,7 @@ export default async function DisciplinasPage({
           <div className="rounded-3xl border border-dashed border-black/15 bg-white/60 p-10 text-center text-sm text-black/50">
             Nenhuma matéria conectada ainda. Sincronize o Google Classroom para
             começar.
+            <div><CreateManualCourse compact /></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -320,18 +323,7 @@ export default async function DisciplinasPage({
               )
             })}
 
-            <AnimatedItem
-              delay={0.12 + filteredCourses.length * 0.06}
-              className="flex min-h-[220px] flex-col items-center justify-center rounded-3xl border border-dashed border-black/15 bg-transparent p-6 text-center"
-            >
-              <div className="flex size-12 items-center justify-center rounded-full bg-lime-400/20">
-                <Plus className="size-6 text-lime-600" aria-hidden="true" />
-              </div>
-              <p className="mt-4 font-semibold">Adicionar matéria</p>
-              <p className="mt-1 text-sm text-black/45">
-                Conecte novas matérias e continue evoluindo!
-              </p>
-            </AnimatedItem>
+            <AnimatedItem delay={0.12 + filteredCourses.length * 0.06} className="h-full"><CreateManualCourse /></AnimatedItem>
           </div>
         )}
       </div>

@@ -2,8 +2,8 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { Medal, Sparkles, TrendingUp, Trophy } from "lucide-react"
 
-import { AnimatedCard, AnimatedItem } from "@/components/dashboard/animated-card"
-import { TrophyIcon } from "@/components/animations/Trophy/page"
+import { AnimatedCard } from "@/components/dashboard/animated-card"
+import { PodiumCard } from "@/components/ranking/podium-card"
 import { Sidebar } from "@/components/sidebar/sidebar"
 import { auth } from "@/lib/auth"
 
@@ -80,32 +80,17 @@ export default async function RankingPage() {
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {podiumOrder.map((student, index) => {
             const position = index === 0 ? 2 : index === 1 ? 1 : 3
-            const isChampion = position === 1
 
             return (
-              <AnimatedItem
+              <PodiumCard
                 key={student.name}
+                name={student.name}
+                xp={student.xp}
+                initials={student.initials}
+                color={student.color}
+                position={position}
                 delay={0.12 + (3 - position) * 0.4}
-                className={`relative flex flex-col items-center rounded-3xl border bg-white p-6 text-center shadow-sm ${
-                  isChampion ? "border-[#50D05C]/40 sm:-translate-y-2" : "border-black/5"
-                }`}
-              >
-                <div className={`flex size-16 items-center justify-center rounded-full text-lg font-bold text-white ${student.color}`}>
-                  {student.initials}
-                </div>
-                {isChampion && (
-                  <div className="mt-2" aria-hidden="true">
-                    <TrophyIcon />
-                  </div>
-                )}
-                <span className="mt-3 text-xs font-semibold uppercase tracking-wider text-black/35">
-                  {position}º lugar
-                </span>
-                <h2 className="mt-1 font-semibold">{student.name}</h2>
-                <p className="mt-1 text-sm font-bold text-[#45B950]">
-                  {student.xp.toLocaleString("pt-BR")} XP
-                </p>
-              </AnimatedItem>
+              />
             )
           })}
         </div>

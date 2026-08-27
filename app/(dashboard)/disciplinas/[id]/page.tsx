@@ -4,6 +4,7 @@ import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 
 import { CompletionCheckbox } from "@/components/classroom/completion-checkbox"
+import { ManualCourseWorkspace } from "@/components/classroom/manual-course-workspace"
 import { auth } from "@/lib/auth"
 import {
   getAssignmentUrl,
@@ -87,6 +88,9 @@ export default async function DisciplinaPage({
     notFound()
   }
 
+  const isManualCourse = course.courseState === "MANUAL"
+  const manualContents = isManualCourse ? await prisma.studyContent.findMany({ where: { userId: session.user.id, courseId: course.id }, select: { id: true, title: true, description: true, studied: true, estimatedMinutes: true }, orderBy: { createdAt: "asc" } }) : []
+
   const googleAccounts = await prisma.account.findMany({
     where: { userId: session.user.id, providerId: "google" },
     select: { id: true },
@@ -98,7 +102,9 @@ export default async function DisciplinaPage({
   let courseMaterials: GoogleClassroomCourseWorkMaterial[] = []
   let integrationError: string | null = null
 
-  if (!googleAccounts.length) {
+  if (isManualCourse) {
+    integrationError = null
+  } else if (!googleAccounts.length) {
     integrationError = "Google Classroom não conectado."
   } else {
     const coursePath = `https://classroom.googleapis.com/v1/courses/${encodeURIComponent(course.googleCourseId)}`
@@ -209,13 +215,13 @@ export default async function DisciplinaPage({
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div>
               <p className="text-sm font-medium text-white/50">
-                {course.section || "Google Classroom"}
+                {course.section || (isManualCourse ? "Estudo pessoal" : "Google Classroom")}
               </p>
               <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
                 {course.name}
               </h1>
               <p className="mt-2 text-sm text-white/50">
-                Atividades organizadas pelos tópicos da disciplina.
+                {isManualCourse ? "Organize seus estudos pessoais nesta matéria." : "Atividades organizadas pelos tópicos da disciplina."}
               </p>
             </div>
 
@@ -241,6 +247,8 @@ export default async function DisciplinaPage({
 
         {/* Atividades */}
         <section aria-labelledby="activities-title">
+          {isManualCourse && <ManualCourseWorkspace courseId={course.id} initialContents={manualContents} />}
+          {!isManualCourse && <>
           <h2 id="activities-title" className="mb-4 text-xl font-semibold">
             Atividades
           </h2>
@@ -256,7 +264,7 @@ export default async function DisciplinaPage({
             assignments.length === 0 &&
             courseMaterials.length === 0 && (
               <div className="rounded-3xl border border-dashed border-black/15 bg-white/60 p-8 text-center text-sm text-black/45">
-                Nenhum tópico ou atividade foi encontrado nesta disciplina.
+                {isManualCourse ? "Matéria criada. Em breve você poderá adicionar atividades e materiais aqui." : "Nenhum tópico ou atividade foi encontrado nesta disciplina."}
               </div>
             )}
 
@@ -284,6 +292,7 @@ export default async function DisciplinaPage({
               )}
             </div>
           )}
+          </>}
         </section>
       </div>
     </main>

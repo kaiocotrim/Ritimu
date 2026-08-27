@@ -21,42 +21,30 @@ const particles = [
   { left: 73, top: 66, x: 35, y: -45, size: 1.5, duration: 4.1, delay: 0.8 },
 ]
 
-export function GalacticParticles() {
+export function GalacticParticles({ alwaysVisible = false }: { alwaysVisible?: boolean }) {
   const reduceMotion = useReducedMotion()
 
   return (
-    <div
-      className="pointer-events-none absolute inset-0 z-[1] overflow-hidden opacity-0 transition-opacity duration-1000 group-hover:opacity-100"
+    <motion.div
+      className={`pointer-events-none absolute inset-0 z-[1] overflow-hidden transition-opacity duration-1000 ${alwaysVisible ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+      initial={alwaysVisible && !reduceMotion ? { opacity: 0 } : undefined}
+      animate={alwaysVisible ? { opacity: 1 } : undefined}
+      transition={alwaysVisible ? { duration: 1.1, delay: 0.35, ease: "easeOut" } : undefined}
       aria-hidden="true"
     >
-      {particles.map((particle, index) => (
-        <motion.span
-          key={index}
+      {[0, 1, 2].flatMap((layer) => particles.map((particle, index) => (
+        <span
+          key={`${layer}-${index}`}
           className="absolute rounded-full bg-white shadow-[0_0_7px_rgba(255,255,255,0.9)]"
           style={{
-            left: `${particle.left}%`,
-            top: `${particle.top}%`,
-            width: particle.size,
-            height: particle.size,
-          }}
-          animate={
-            reduceMotion
-              ? { opacity: 0.65 }
-              : {
-                  x: [0, particle.x, particle.x * -0.35, 0],
-                  y: [0, particle.y, particle.y * 0.25, 0],
-                  opacity: [0.15, 1, 0.4, 0.15],
-                  scale: [0.7, 1.4, 0.9, 0.7],
-                }
-          }
-          transition={{
-            duration: particle.duration,
-            delay: particle.delay,
-            repeat: Infinity,
-            ease: "easeInOut",
+            left: `${(particle.left + layer * 31) % 96}%`,
+            top: `${(particle.top + layer * 23) % 94}%`,
+            width: particle.size - layer * 0.2,
+            height: particle.size - layer * 0.2,
+            opacity: 0.35 + ((index + layer) % 4) * 0.16,
           }}
         />
-      ))}
-    </div>
+      )))}
+    </motion.div>
   )
 }
