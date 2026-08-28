@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { awardXp, XP_REWARDS, XpSource } from "@/lib/gamification"
 import { getStudyPlanUserId } from "@/lib/study-plan/auth"
 import { parseStudyContent } from "@/lib/study-plan/validation"
 
@@ -11,7 +12,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const parsed = parseStudyContent({ title: body?.title ?? existing.title, description: body?.description ?? existing.description, courseId: body?.courseId === undefined ? existing.courseId : body.courseId, dueDate: body?.dueDate === undefined ? existing.dueDate?.toISOString() : body.dueDate, importance: body?.importance ?? existing.importance, estimatedMinutes: body?.estimatedMinutes ?? existing.estimatedMinutes, studied: body?.studied ?? existing.studied })
   if ("error" in parsed) return Response.json({ error: parsed.error }, { status: 400 })
   if (parsed.data.courseId && !(await prisma.classroomCourse.findFirst({ where: { id: parsed.data.courseId, userId }, select: { id: true } }))) return Response.json({ error: "Disciplina não encontrada." }, { status: 404 })
-  return Response.json({ content: await prisma.studyContent.update({ where: { id }, data: parsed.data }) })
+  const content = await prisma.$transaction(async (tx) => {
+    const updated = await tx.studyContent.update({ where: { id }, data: parsed.data })
+    if (parsed.data.studied) await awardXp(tx, { userId, amount: XP_REWARDS.studyContent, source: XpSource.STUDY_CONTENT, referenceId: id, description: "Conteúdo estudado" })
+    return updated
+  })
+  return Response.json({ content })
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {

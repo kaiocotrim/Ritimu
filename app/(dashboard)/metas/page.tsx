@@ -13,12 +13,10 @@ import {
 } from "lucide-react"
 
 import { auth } from "@/lib/auth"
+import { getGamificationSummary } from "@/lib/gamification"
+import { getMissionProgress, syncMissionRewards } from "@/lib/missions"
 import { AnimatedCard, AnimatedItem } from "@/components/dashboard/animated-card"
 import { Sidebar } from "@/components/sidebar/sidebar"
-
-// TODO: substituir por dados reais (banco de dados / API) quando existirem.
-// Estrutura isolada aqui em cima pra ficar fácil trocar por fetch depois,
-// no mesmo padrão usado em /dashboard e /disciplinas.
 
 type Mission = {
   id: string
@@ -32,25 +30,25 @@ type Mission = {
   completed: boolean
 }
 
-const missionsMock: Mission[] = [
+const missionDefinitions: Mission[] = [
   {
     id: "1",
     title: "Complete 1 atividade",
     description: "Termine qualquer atividade de uma matéria hoje.",
     type: "diaria",
-    progress: 100,
-    current: 1,
+    progress: 0,
+    current: 0,
     target: 1,
     xp: 20,
-    completed: true,
+    completed: false,
   },
   {
     id: "2",
     title: "Estude por 30 minutos",
     description: "Fique pelo menos 30 minutos ativo em uma matéria.",
     type: "diaria",
-    progress: 60,
-    current: 18,
+    progress: 0,
+    current: 0,
     target: 30,
     xp: 15,
     completed: false,
@@ -60,19 +58,19 @@ const missionsMock: Mission[] = [
     title: "Mantenha a sequência",
     description: "Acesse a plataforma hoje sem quebrar sua sequência.",
     type: "diaria",
-    progress: 100,
-    current: 1,
+    progress: 0,
+    current: 0,
     target: 1,
     xp: 10,
-    completed: true,
+    completed: false,
   },
   {
     id: "4",
     title: "Finalize 5 atividades",
     description: "Complete 5 atividades em qualquer matéria nesta semana.",
     type: "semanal",
-    progress: 40,
-    current: 2,
+    progress: 0,
+    current: 0,
     target: 5,
     xp: 80,
     completed: false,
@@ -82,8 +80,8 @@ const missionsMock: Mission[] = [
     title: "Explore 3 matérias diferentes",
     description: "Avance o progresso em pelo menos 3 matérias distintas.",
     type: "semanal",
-    progress: 66,
-    current: 2,
+    progress: 0,
+    current: 0,
     target: 3,
     xp: 60,
     completed: false,
@@ -93,11 +91,11 @@ const missionsMock: Mission[] = [
     title: "Sequência de 7 dias",
     description: "Mantenha 7 dias seguidos de atividade na plataforma.",
     type: "semanal",
-    progress: 100,
-    current: 7,
+    progress: 0,
+    current: 0,
     target: 7,
     xp: 100,
-    completed: true,
+    completed: false,
   },
 ]
 
@@ -122,23 +120,27 @@ export default async function MissoesPage({
     redirect("/login")
   }
 
+  const progressById = await getMissionProgress(session.user.id)
+  await syncMissionRewards(session.user.id, progressById)
+  const gamification = await getGamificationSummary(session.user.id)
+  const missions = missionDefinitions.map((mission) => ({
+    ...mission,
+    ...progressById[mission.id as keyof typeof progressById],
+  }))
+
   const { filter: filterParam } = await searchParams
   const activeFilter: Filter =
     filterParam === "diarias" || filterParam === "semanais"
       ? filterParam
       : "todas"
 
-  const filteredMissions = missionsMock.filter((mission) => {
+  const filteredMissions = missions.filter((mission) => {
     if (activeFilter === "diarias") return mission.type === "diaria"
     if (activeFilter === "semanais") return mission.type === "semanal"
     return true
   })
 
-  const completedCount = missionsMock.filter((m) => m.completed).length
-  const totalXpAvailable = missionsMock.reduce((sum, m) => sum + m.xp, 0)
-  const xpEarned = missionsMock
-    .filter((m) => m.completed)
-    .reduce((sum, m) => sum + m.xp, 0)
+  const completedCount = missions.filter((mission) => mission.completed).length
 
   return (
     <main className="min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-8 text-[#111111] sm:px-8 lg:px-16">
@@ -169,7 +171,7 @@ export default async function MissoesPage({
                 <p className="text-2xl font-bold">
                   {completedCount}{" "}
                   <span className="text-base font-medium text-white/60">
-                    de {missionsMock.length}
+                    de {missions.length}
                   </span>
                 </p>
               </div>
@@ -180,16 +182,16 @@ export default async function MissoesPage({
               <div>
                 <p className="text-sm text-white/50">XP ganho hoje</p>
                 <p className="text-2xl font-bold">
-                  {xpEarned}{" "}
+                  {gamification.todayXp}{" "}
                   <span className="text-base font-medium text-white/60">
-                    / {totalXpAvailable} XP
+                    / {gamification.dailyGoalXp} XP
                   </span>
                 </p>
                 <div className="mt-1.5 h-1.5 w-32 overflow-hidden rounded-full bg-white/10">
                   <div
                     className="h-full rounded-full bg-lime-400"
                     style={{
-                      width: `${Math.round((xpEarned / totalXpAvailable) * 100)}%`,
+                      width: `${gamification.dailyGoalPercent}%`,
                     }}
                   />
                 </div>
@@ -208,7 +210,7 @@ export default async function MissoesPage({
               <div>
                 <p className="text-sm text-white/50">Sequência</p>
                 <p className="text-2xl font-bold">
-                  12{" "}
+                  {gamification.streak}{" "}
                   <span className="text-base font-medium text-white/60">
                     dias
                   </span>

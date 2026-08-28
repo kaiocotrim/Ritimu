@@ -16,6 +16,7 @@ import {
   Target,
 } from "lucide-react"
 import { auth } from "@/lib/auth"
+import { getGamificationSummary, XP_REWARDS } from "@/lib/gamification"
 import { prisma } from "@/lib/prisma"
 import { SyncGoogleClassroom } from "@/components/integrations/sync-google-classroom"
 import { CreateManualCourse } from "@/components/classroom/create-manual-course"
@@ -33,21 +34,22 @@ const CARD_STYLES = [
 
 type Filter = "todas" | "andamento" | "concluidas"
 
+function googleEmailFromIdToken(idToken: string | null | undefined) {
+  if (!idToken) return null
+
+  try {
+    const payload = JSON.parse(Buffer.from(idToken.split(".")[1], "base64url").toString("utf8")) as { email?: unknown }
+    return typeof payload.email === "string" ? payload.email : null
+  } catch {
+    return null
+  }
+}
+
 const FILTERS: { id: Filter; label: string }[] = [
   { id: "todas", label: "Todas" },
   { id: "andamento", label: "Em andamento" },
   { id: "concluidas", label: "Concluídas" },
 ]
-
-// TODO: substituir por dados reais de sequência (streak) / meta diária / XP
-// total assim que existir uma tabela/serviço para isso. Isolado aqui em cima,
-// no mesmo padrão do dashboard, pra trocar por fetch depois.
-const heroMock = {
-  streakDays: 12,
-  dailyGoalPercent: 75,
-  xpTotal: 1250,
-  xpNextLevel: 1500,
-}
 
 export default async function DisciplinasPage({
   searchParams,
@@ -68,23 +70,33 @@ export default async function DisciplinasPage({
       ? filterParam
       : "todas"
 
-  const courses = await prisma.classroomCourse.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    orderBy: {
-      name: "asc",
-    },
-    include: {
-      _count: {
-        select: {
-          itemCompletions: {
-            where: { completed: true },
+  const [courses, googleAccount, gamification] = await Promise.all([
+    prisma.classroomCourse.findMany({
+      where: {
+        userId: session.user.id,
+      },
+      orderBy: {
+        name: "asc",
+      },
+      include: {
+        _count: {
+          select: {
+            itemCompletions: {
+              where: { completed: true },
+            },
           },
         },
       },
-    },
-  })
+    }),
+    prisma.account.findFirst({
+      where: { userId: session.user.id, providerId: "google" },
+      orderBy: { updatedAt: "desc" },
+      select: { idToken: true },
+    }),
+    getGamificationSummary(session.user.id),
+  ])
+
+  const connectedGoogleEmail = googleEmailFromIdToken(googleAccount?.idToken)
 
   const courseCards = courses.map((course) => {
     const completedCount = course._count.itemCompletions
@@ -96,7 +108,7 @@ export default async function DisciplinasPage({
     // TODO: substituir por XP/nível reais assim que existir gamificação no
     // schema. Derivado do progresso real só pra não deixar o card vazio —
     // não afeta a lógica de conclusão.
-    const xp = completedCount * 25
+    const xp = completedCount * XP_REWARDS.classroomItem
     const level = Math.max(1, Math.floor(xp / 100) + 1)
 
     return {
@@ -118,12 +130,12 @@ export default async function DisciplinasPage({
 
   const xpProgress = Math.min(
     100,
-    Math.round((heroMock.xpTotal / heroMock.xpNextLevel) * 100)
+    gamification.progress
   )
 
   return (
-    <main className="min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-8 text-[#111111] sm:px-8 lg:px-16">
-      <div className="mx-auto max-w-6xl">
+    <main className="min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-10 text-[#111111] sm:px-8 sm:pt-12 lg:px-16 lg:pt-14">
+      <div className="mx-auto max-w-[1120px]">
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -134,11 +146,7 @@ export default async function DisciplinasPage({
               Continue sua jornada. Cada aula te aproxima do seu objetivo! 🚀
             </p>
           </div>
-          <SyncGoogleClassroom
-            initiallySynced={courses.some(
-              (course) => course.courseState !== "MANUAL" && !course.googleCourseId.startsWith("manual:")
-            )}
-          />
+          <SyncGoogleClassroom connectedEmail={connectedGoogleEmail} />
         </div>
 
         {/* Hero banner */}
@@ -154,7 +162,7 @@ export default async function DisciplinasPage({
               <div>
                 <p className="text-sm text-white/50">Sequência atual</p>
                 <p className="text-2xl font-bold">
-                  {heroMock.streakDays}{" "}
+                  {gamification.streak}{" "}
                   <span className="text-base font-medium text-white/60">
                     dias
                   </span>
@@ -173,7 +181,7 @@ export default async function DisciplinasPage({
               <div>
                 <p className="text-sm text-white/50">Meta diária</p>
                 <p className="text-2xl font-bold">
-                  {heroMock.dailyGoalPercent}%{" "}
+                  {gamification.dailyGoalPercent}%{" "}
                   <span className="text-base font-medium text-white/60">
                     concluída
                   </span>
@@ -182,7 +190,7 @@ export default async function DisciplinasPage({
                 <div className="mt-1.5 h-1.5 w-32 overflow-hidden rounded-full bg-white/10">
                   <div
                     className="h-full rounded-full bg-lime-400"
-                    style={{ width: `${heroMock.dailyGoalPercent}%` }}
+                    style={{ width: `${gamification.dailyGoalPercent}%` }}
                   />
                 </div>
               </div>
@@ -199,13 +207,13 @@ export default async function DisciplinasPage({
               <div>
                 <p className="text-sm text-white/50">XP total</p>
                 <p className="text-2xl font-bold">
-                  {heroMock.xpTotal.toLocaleString("pt-BR")}{" "}
+                  {gamification.totalXp.toLocaleString("pt-BR")}{" "}
                   <span className="text-base font-medium text-white/60">
                     pontos
                   </span>
                 </p>
                 <p className="mt-0.5 text-xs text-white/40">
-                  Próximo nível: {heroMock.xpNextLevel.toLocaleString("pt-BR")}{" "}
+                  Próximo nível: {gamification.nextLevelXp.toLocaleString("pt-BR")}{" "}
                   XP
                 </p>
                 <div className="mt-1.5 h-1.5 w-32 overflow-hidden rounded-full bg-white/10">

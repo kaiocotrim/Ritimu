@@ -6,15 +6,15 @@ const adapter = new PrismaPg({
 })
 
 const globalForPrisma = globalThis as unknown as {
-  prismaPlannerV1: PrismaClient | undefined
+  prismaPlannerV4: PrismaClient | undefined
 }
 
 export const prisma =
-  globalForPrisma.prismaPlannerV1 ??
+  globalForPrisma.prismaPlannerV4 ??
   new PrismaClient({
     adapter,
   })
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prismaPlannerV1 = prisma
+  globalForPrisma.prismaPlannerV4 = prisma
 }

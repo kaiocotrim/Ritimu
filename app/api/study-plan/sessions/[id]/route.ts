@@ -1,4 +1,5 @@
 import { StudySessionStatus } from "@/lib/generated/prisma/enums"
+import { awardXp, XP_REWARDS, XpSource } from "@/lib/gamification"
 import { prisma } from "@/lib/prisma"
 import { getStudyPlanUserId } from "@/lib/study-plan/auth"
 
@@ -14,6 +15,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const session = await prisma.$transaction(async (tx) => {
     const updated = await tx.studySession.update({ where: { id }, data: { status, completedAt: status === "COMPLETED" ? new Date() : null } })
     await tx.calendarEvent.updateMany({ where: { studySessionId: id, userId }, data: { status: status === "COMPLETED" ? "COMPLETED" : status === "MISSED" ? "CANCELED" : "PENDING" } })
+    if (status === "COMPLETED") await awardXp(tx, { userId, amount: XP_REWARDS.studySession, source: XpSource.STUDY_SESSION, referenceId: id, description: "Sessão de estudo concluída" })
     return updated
   })
   return Response.json({ session })

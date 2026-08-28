@@ -1,63 +1,85 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Check, CircleAlert, LoaderCircle } from "lucide-react"
-import { AnimatePresence, motion, useReducedMotion } from "motion/react"
+import { LoaderCircle } from "lucide-react"
+import { motion, useReducedMotion } from "motion/react"
 
-type SyncGoogleClassroomProps = {
-  initiallySynced?: boolean
-}
+import { authClient } from "@/lib/auth-client"
+import { GOOGLE_CLASSROOM_SCOPES } from "@/lib/google-classroom"
 
-export function SyncGoogleClassroom({ initiallySynced = false }: SyncGoogleClassroomProps) {
-  const router = useRouter()
+export function SyncGoogleClassroom({ connectedEmail }: { connectedEmail?: string | null }) {
   const reduceMotion = useReducedMotion()
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [isSynced, setIsSynced] = useState(initiallySynced)
+  const [isConnecting, setIsConnecting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function handleSync() {
-    setIsSyncing(true)
+  if (connectedEmail) {
+    return (
+      <motion.button
+        type="button"
+        onClick={() => void handleConnect()}
+        disabled={isConnecting}
+        className="group flex min-w-60 items-center gap-3 rounded-full border border-black/[.08] bg-white px-4 py-2.5 text-left shadow-sm transition hover:border-[#4285F4]/25 hover:shadow-md disabled:cursor-wait"
+        whileHover={reduceMotion || isConnecting ? undefined : { y: -2 }}
+        whileTap={reduceMotion || isConnecting ? undefined : { scale: 0.98 }}
+        aria-label="Trocar conta do Google Classroom"
+      >
+        {isConnecting ? <LoaderCircle className="size-4 shrink-0 animate-spin text-[#4285F4]" /> : <GoogleIcon />}
+        <span className="relative block min-w-0 flex-1 overflow-hidden text-sm font-medium">
+          <span className={`block truncate text-black/65 transition-all duration-200 group-hover:-translate-y-full group-hover:opacity-0 ${isConnecting ? "-translate-y-full opacity-0" : ""}`}>{connectedEmail}</span>
+          <span className={`absolute inset-0 flex translate-y-full items-center text-[#4285F4] opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${isConnecting ? "translate-y-0 opacity-100" : ""}`}>{isConnecting ? "Abrindo o Google..." : "Trocar conta"}</span>
+        </span>
+      </motion.button>
+    )
+  }
+
+  async function handleConnect() {
+    setIsConnecting(true)
     setError(null)
 
     try {
-      const response = await fetch("/api/classroom/sync", { method: "POST" })
-      const data = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(data?.error ?? "Não foi possível sincronizar as matérias")
+      const result = await authClient.linkSocial({
+        provider: "google",
+        callbackURL: "/disciplinas",
+        scopes: [...GOOGLE_CLASSROOM_SCOPES],
+        additionalParams: {
+          prompt: "select_account consent",
+          access_type: "offline",
+        },
+      })
 
-      const foundCourses = typeof data?.synced === "number" && data.synced > 0
-      setIsSynced(foundCourses)
-      if (!foundCourses) setError("Nenhuma turma foi encontrada no Google Classroom.")
-      router.refresh()
-    } catch (syncError) {
-      setError(syncError instanceof Error ? syncError.message : "Não foi possível sincronizar as matérias")
+      if (result.error) throw new Error(result.error.message ?? "Não foi possível conectar ao Google")
+    } catch (connectError) {
+      setError(connectError instanceof Error ? connectError.message : "Não foi possível conectar ao Google")
     } finally {
-      setIsSyncing(false)
+      setIsConnecting(false)
     }
   }
 
   return (
-    <div className="flex flex-col items-end gap-2">
+    <div className="flex flex-col items-end gap-1.5">
       <motion.button
         type="button"
-        onClick={() => void handleSync()}
-        disabled={isSyncing}
-        className={`relative flex min-w-60 items-center justify-center gap-2 overflow-hidden rounded-full px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-wait ${isSynced ? "bg-[#EAF8EC] text-[#2F8F3A] ring-1 ring-[#50D05C]/25 hover:bg-[#DDF4E0]" : "bg-red-50 text-red-600 ring-1 ring-red-200 hover:bg-red-100"}`}
-        whileHover={reduceMotion || isSyncing ? undefined : { y: -2, scale: 1.015 }}
-        whileTap={reduceMotion || isSyncing ? undefined : { scale: 0.98 }}
-        layout
+        onClick={() => void handleConnect()}
+        disabled={isConnecting}
+        className="flex min-w-60 items-center justify-center gap-2 rounded-full bg-black px-5 py-3 text-sm font-semibold text-white transition hover:bg-black/80 disabled:cursor-wait disabled:opacity-65"
+        whileHover={reduceMotion || isConnecting ? undefined : { y: -2, scale: 1.015 }}
+        whileTap={reduceMotion || isConnecting ? undefined : { scale: 0.98 }}
       >
-        {isSynced && !isSyncing && <motion.span className="absolute inset-0 bg-[linear-gradient(110deg,transparent_20%,rgba(255,255,255,.65)_45%,transparent_70%)]" initial={reduceMotion ? false : { x: "-120%" }} animate={reduceMotion ? undefined : { x: "120%" }} transition={{ duration: 0.75, delay: 0.15 }} />}
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.span key={isSyncing ? "syncing" : isSynced ? "synced" : "idle"} className="relative flex items-center gap-2" initial={reduceMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -5 }} transition={{ duration: 0.2 }}>
-            {isSyncing ? <LoaderCircle className="size-4 animate-spin" /> : isSynced ? <Check className="size-4" /> : <CircleAlert className="size-4" />}
-            {isSyncing ? "Sincronizando..." : isSynced ? "Google Classroom sincronizado" : "Nenhum Google Classroom encontrado"}
-          </motion.span>
-        </AnimatePresence>
+        {isConnecting ? <LoaderCircle className="size-4 animate-spin" /> : <GoogleIcon />}
+        {isConnecting ? "Abrindo o Google..." : "Conectar Google Classroom"}
       </motion.button>
-      <AnimatePresence>
-        {error && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="max-w-xs text-right text-sm text-destructive">{error}</motion.p>}
-      </AnimatePresence>
+      {error && <p className="max-w-xs text-right text-xs text-red-600">{error}</p>}
     </div>
+  )
+}
+
+function GoogleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-4 shrink-0">
+      <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.4-.18-2.05H12v3.87h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.35Z" />
+      <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.42l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.59A10 10 0 0 0 12 22Z" />
+      <path fill="#FBBC05" d="M6.39 13.9A6 6 0 0 1 6.08 12c0-.66.11-1.3.31-1.9V7.51H3.04A10 10 0 0 0 2 12c0 1.61.38 3.14 1.04 4.49l3.35-2.59Z" />
+      <path fill="#EA4335" d="M12 5.97c1.47 0 2.79.51 3.83 1.5l2.87-2.88A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.51L6.39 10.1C7.18 7.73 9.39 5.97 12 5.97Z" />
+    </svg>
   )
 }

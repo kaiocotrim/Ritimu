@@ -1,8 +1,10 @@
 import { headers } from "next/headers"
 
 import { auth } from "@/lib/auth"
+import { awardXp, XP_REWARDS, XpSource } from "@/lib/gamification"
 import { CalendarEventStatus, StudySessionStatus } from "@/lib/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
+import { getDateKey, getDayRange } from "@/lib/study-plan/today"
 
 async function userId() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -20,9 +22,46 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   if (typeof body.completed === "boolean") {
     const completed = body.completed
+    const occurrenceKey = typeof body.occurrenceDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.occurrenceDate)
+      ? body.occurrenceDate
+      : getDateKey()
+    const occurrenceDate = getDayRange(new Date(`${occurrenceKey}T12:00:00-03:00`)).start
+
     const event = await prisma.$transaction(async (tx) => {
-      if (existing.studySessionId) await tx.studySession.update({ where: { id: existing.studySessionId }, data: { status: completed ? StudySessionStatus.COMPLETED : StudySessionStatus.PENDING, completedAt: completed ? new Date() : null } })
-      return tx.calendarEvent.update({ where: { id: eventId }, data: { status: completed ? CalendarEventStatus.COMPLETED : CalendarEventStatus.PENDING } })
+      if (completed) {
+        await tx.calendarEventDayCompletion.upsert({
+          where: { calendarEventId_occurrenceDate: { calendarEventId: eventId, occurrenceDate } },
+          update: { completedAt: new Date() },
+          create: { userId: id, calendarEventId: eventId, occurrenceDate },
+        })
+      } else {
+        await tx.calendarEventDayCompletion.deleteMany({ where: { userId: id, calendarEventId: eventId, occurrenceDate } })
+      }
+
+      if (existing.studySessionId && existing.recurrence === "NONE") {
+        await tx.studySession.update({
+          where: { id: existing.studySessionId },
+          data: { status: completed ? StudySessionStatus.COMPLETED : StudySessionStatus.PENDING, completedAt: completed ? new Date() : null },
+        })
+        if (completed) {
+          await awardXp(tx, {
+            userId: id,
+            amount: XP_REWARDS.studySession,
+            source: XpSource.STUDY_SESSION,
+            referenceId: existing.studySessionId,
+            description: "Sessão de estudo concluída",
+          })
+        }
+      }
+
+      return tx.calendarEvent.update({
+        where: { id: eventId },
+        data: {
+          status: existing.recurrence === "NONE"
+            ? completed ? CalendarEventStatus.COMPLETED : CalendarEventStatus.PENDING
+            : CalendarEventStatus.PENDING,
+        },
+      })
     })
     return Response.json({ event })
   }

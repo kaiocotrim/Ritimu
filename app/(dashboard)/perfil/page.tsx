@@ -20,12 +20,13 @@ import { LogoutButton } from "@/components/auth/logout-button"
 import { AnimatedCard, AnimatedItem } from "@/components/dashboard/animated-card"
 import { Sidebar } from "@/components/sidebar/sidebar"
 import { auth } from "@/lib/auth"
+import { getGamificationSummary } from "@/lib/gamification"
 import { prisma } from "@/lib/prisma"
 
 const profileStats = [
-  { label: "XP total", value: "1.870", Icon: Sparkles },
-  { label: "Sequência", value: "12 dias", Icon: Flame },
-  { label: "Posição", value: "4º lugar", Icon: Medal },
+  { label: "XP total", Icon: Sparkles },
+  { label: "Sequência", Icon: Flame },
+  { label: "Posição", Icon: Medal },
 ]
 
 export default async function PerfilPage() {
@@ -37,7 +38,7 @@ export default async function PerfilPage() {
     redirect("/login")
   }
 
-  const [coursesCount, completedItems, user] = await Promise.all([
+  const [coursesCount, completedItems, user, gamification, xpByUser] = await Promise.all([
     prisma.classroomCourse.count({ where: { userId: session.user.id } }),
     prisma.classroomItemCompletion.count({
       where: { userId: session.user.id, completed: true },
@@ -46,7 +47,27 @@ export default async function PerfilPage() {
       where: { id: session.user.id },
       select: { createdAt: true },
     }),
+    getGamificationSummary(session.user.id),
+    prisma.user.findMany({
+      select: {
+        id: true,
+        xpTransactions: { select: { amount: true } },
+      },
+    }),
   ])
+
+  const orderedUsers = xpByUser
+    .map((item) => ({ id: item.id, xp: item.xpTransactions.reduce((sum, transaction) => sum + transaction.amount, 0) }))
+    .sort((a, b) => b.xp - a.xp)
+  const position = Math.max(1, orderedUsers.findIndex((item) => item.id === session.user.id) + 1)
+  const liveProfileStats = profileStats.map((stat, index) => ({
+    ...stat,
+    value: [
+      gamification.totalXp.toLocaleString("pt-BR"),
+      `${gamification.streak} dias`,
+      `${position}º lugar`,
+    ][index],
+  }))
 
   const initials = session.user.name
     .split(" ")
@@ -102,7 +123,7 @@ export default async function PerfilPage() {
         </AnimatedCard>
 
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {profileStats.map(({ label, value, Icon }, index) => (
+          {liveProfileStats.map(({ label, value, Icon }, index) => (
             <AnimatedItem
               key={label}
               delay={0.12 + index * 0.06}

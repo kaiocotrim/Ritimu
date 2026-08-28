@@ -10,23 +10,25 @@ datasource db {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 
 model User {
-  id                       String                    @id
-  name                     String
-  email                    String
-  emailVerified            Boolean                   @default(false)
-  image                    String?
-  createdAt                DateTime                  @default(now())
-  updatedAt                DateTime                  @updatedAt
-  sessions                 Session[]
-  accounts                 Account[]
-  classroomCourses         ClassroomCourse[]
-  classroomItemCompletions ClassroomItemCompletion[]
-  calendarEvents           CalendarEvent[]
-  studyPreference          StudyPreference?
-  studyAvailabilities      StudyAvailability[]
-  studySubjectPreferences  StudySubjectPreference[]
-  studyPlans               StudyPlan[]
-  studyContents            StudyContent[]
+  id                          String                       @id
+  name                        String
+  email                       String
+  emailVerified               Boolean                      @default(false)
+  image                       String?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
+  sessions                    Session[]
+  accounts                    Account[]
+  classroomCourses            ClassroomCourse[]
+  classroomItemCompletions    ClassroomItemCompletion[]
+  calendarEvents              CalendarEvent[]
+  calendarEventDayCompletions CalendarEventDayCompletion[]
+  studyPreference             StudyPreference?
+  studyAvailabilities         StudyAvailability[]
+  studySubjectPreferences     StudySubjectPreference[]
+  studyPlans                  StudyPlan[]
+  studyContents               StudyContent[]
+  xpTransactions              XpTransaction[]
 
   @@unique([email])
   @@map("user")
@@ -164,18 +166,32 @@ enum CalendarSyncStatus {
 }
 
 model StudyPreference {
-  id                    String   @id @default(cuid())
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  defaultSessionMinutes Int      @default(40)
-  breakMinutes          Int      @default(10)
-  maxDailyMinutes       Int      @default(120)
-  studyOnWeekends       Boolean  @default(false)
-  timeZone              String   @default("America/Sao_Paulo")
-  syncWithGoogleDefault Boolean  @default(false)
+  id                    String               @id @default(cuid())
+  userId                String               @unique
+  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultSessionMinutes Int                  @default(40)
+  breakMinutes          Int                  @default(10)
+  maxDailyMinutes       Int                  @default(120)
+  studyOnWeekends       Boolean              @default(false)
+  timeZone              String               @default("America/Sao_Paulo")
+  syncWithGoogleDefault Boolean              @default(false)
   plannerView           StudyPlanPeriodType?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+}
+
+model CalendarEventDayCompletion {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  calendarEventId String
+  calendarEvent   CalendarEvent @relation(fields: [calendarEventId], references: [id], onDelete: Cascade)
+  occurrenceDate  DateTime
+  completedAt     DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+
+  @@unique([calendarEventId, occurrenceDate])
+  @@index([userId, occurrenceDate])
 }
 
 model StudyAvailability {
@@ -300,31 +316,32 @@ enum CalendarEventStatus {
 }
 
 model CalendarEvent {
-  id                    String               @id @default(cuid())
+  id                    String                       @id @default(cuid())
   title                 String
   description           String?
   startAt               DateTime
   endAt                 DateTime?
-  allDay                Boolean              @default(false)
-  source                CalendarEventSource  @default(RITIMU)
-  type                  CalendarEventType    @default(STUDY)
-  status                CalendarEventStatus  @default(PENDING)
-  routineType           String               @default("OTHER")
-  recurrence            String               @default("NONE")
-  recurrenceDays        Int[]                @default([])
+  allDay                Boolean                      @default(false)
+  source                CalendarEventSource          @default(RITIMU)
+  type                  CalendarEventType            @default(STUDY)
+  status                CalendarEventStatus          @default(PENDING)
+  routineType           String                       @default("OTHER")
+  recurrence            String                       @default("NONE")
+  recurrenceDays        Int[]                        @default([])
   recurrenceUntil       DateTime?
   googleEventId         String?
   googleCalendarId      String?
-  syncedWithGoogle      Boolean              @default(false)
+  syncedWithGoogle      Boolean                      @default(false)
   googleUpdatedAt       DateTime?
   classroomAssignmentId String?
-  classroomAssignment   ClassroomAssignment? @relation(fields: [classroomAssignmentId], references: [id], onDelete: SetNull)
-  studySessionId        String?              @unique
-  studySession          StudySession?        @relation(fields: [studySessionId], references: [id], onDelete: Cascade)
+  classroomAssignment   ClassroomAssignment?         @relation(fields: [classroomAssignmentId], references: [id], onDelete: SetNull)
+  studySessionId        String?                      @unique
+  studySession          StudySession?                @relation(fields: [studySessionId], references: [id], onDelete: Cascade)
   userId                String
-  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
+  user                  User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+  dayCompletions        CalendarEventDayCompletion[]
 
   @@unique([userId, googleCalendarId, googleEventId])
   @@index([userId, startAt])
@@ -348,4 +365,27 @@ model ClassroomItemCompletion {
 
   @@unique([userId, courseId, itemKey])
   @@index([userId, courseId, completed])
+}
+
+enum XpSource {
+  CLASSROOM_ITEM
+  STUDY_SESSION
+  STUDY_CONTENT
+  MISSION
+}
+
+model XpTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount      Int
+  source      XpSource
+  referenceId String
+  description String
+  earnedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, source, referenceId])
+  @@index([userId, earnedAt])
+  @@index([source, referenceId])
 }
