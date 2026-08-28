@@ -135,7 +135,9 @@ export default async function DisciplinasPage({
             </p>
           </div>
           <SyncGoogleClassroom
-            initiallySynced={courses.length > 0}
+            initiallySynced={courses.some(
+              (course) => course.courseState !== "MANUAL" && !course.googleCourseId.startsWith("manual:")
+            )}
           />
         </div>
 

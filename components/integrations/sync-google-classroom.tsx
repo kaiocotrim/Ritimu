@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { Check, LoaderCircle, RefreshCw } from "lucide-react"
+import { Check, CircleAlert, LoaderCircle } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 
 type SyncGoogleClassroomProps = {
@@ -25,7 +25,9 @@ export function SyncGoogleClassroom({ initiallySynced = false }: SyncGoogleClass
       const data = await response.json().catch(() => null)
       if (!response.ok) throw new Error(data?.error ?? "Não foi possível sincronizar as matérias")
 
-      setIsSynced(true)
+      const foundCourses = typeof data?.synced === "number" && data.synced > 0
+      setIsSynced(foundCourses)
+      if (!foundCourses) setError("Nenhuma turma foi encontrada no Google Classroom.")
       router.refresh()
     } catch (syncError) {
       setError(syncError instanceof Error ? syncError.message : "Não foi possível sincronizar as matérias")
@@ -40,7 +42,7 @@ export function SyncGoogleClassroom({ initiallySynced = false }: SyncGoogleClass
         type="button"
         onClick={() => void handleSync()}
         disabled={isSyncing}
-        className={`relative flex min-w-60 items-center justify-center gap-2 overflow-hidden rounded-full px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-wait ${isSynced ? "bg-[#EAF8EC] text-[#2F8F3A] ring-1 ring-[#50D05C]/25 hover:bg-[#DDF4E0]" : "bg-black text-white hover:bg-black/80"}`}
+        className={`relative flex min-w-60 items-center justify-center gap-2 overflow-hidden rounded-full px-5 py-3 text-sm font-semibold transition-colors disabled:cursor-wait ${isSynced ? "bg-[#EAF8EC] text-[#2F8F3A] ring-1 ring-[#50D05C]/25 hover:bg-[#DDF4E0]" : "bg-red-50 text-red-600 ring-1 ring-red-200 hover:bg-red-100"}`}
         whileHover={reduceMotion || isSyncing ? undefined : { y: -2, scale: 1.015 }}
         whileTap={reduceMotion || isSyncing ? undefined : { scale: 0.98 }}
         layout
@@ -48,8 +50,8 @@ export function SyncGoogleClassroom({ initiallySynced = false }: SyncGoogleClass
         {isSynced && !isSyncing && <motion.span className="absolute inset-0 bg-[linear-gradient(110deg,transparent_20%,rgba(255,255,255,.65)_45%,transparent_70%)]" initial={reduceMotion ? false : { x: "-120%" }} animate={reduceMotion ? undefined : { x: "120%" }} transition={{ duration: 0.75, delay: 0.15 }} />}
         <AnimatePresence mode="wait" initial={false}>
           <motion.span key={isSyncing ? "syncing" : isSynced ? "synced" : "idle"} className="relative flex items-center gap-2" initial={reduceMotion ? false : { opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, y: -5 }} transition={{ duration: 0.2 }}>
-            {isSyncing ? <LoaderCircle className="size-4 animate-spin" /> : isSynced ? <Check className="size-4" /> : <RefreshCw className="size-4" />}
-            {isSyncing ? "Sincronizando..." : isSynced ? "Google Classroom sincronizado" : "Sincronizar Google Classroom"}
+            {isSyncing ? <LoaderCircle className="size-4 animate-spin" /> : isSynced ? <Check className="size-4" /> : <CircleAlert className="size-4" />}
+            {isSyncing ? "Sincronizando..." : isSynced ? "Google Classroom sincronizado" : "Nenhum Google Classroom encontrado"}
           </motion.span>
         </AnimatePresence>
       </motion.button>
