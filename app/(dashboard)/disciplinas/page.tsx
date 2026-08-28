@@ -148,7 +148,6 @@ export default async function DisciplinasPage({
             <div className="flex items-center gap-3">
               <FireIcon
                 className="size-25 shrink-0 fill-orange-500 text-orange-500"
-                aria-hidden="true"
               />
               <div>
                 <p className="text-sm text-white/50">Sequência atual</p>
@@ -188,7 +187,7 @@ export default async function DisciplinasPage({
             </div>
 
             <div className="hidden items-center justify-center rounded-full bg-white/5 p-5 sm:flex">
-              <RocketLaunchIcon className="size-8 text-lime-400" aria-hidden="true" />
+              <RocketLaunchIcon className="size-8 text-lime-400" />
             </div>
 
             <div className="flex items-center gap-3">

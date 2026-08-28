@@ -154,33 +154,60 @@
 
   .pixel-login {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    image-rendering: pixelated;
   }
 
   .pixel-login-card {
-    border-radius: 8px;
-    box-shadow: 10px 10px 0 #b8ef54, 14px 14px 0 #202128;
+    border-radius: 0;
+    box-shadow: 6px 6px 0 #8b8e96, 12px 12px 0 #202128;
   }
 
   .pixel-login .login-input {
     border-width: 2px;
-    border-radius: 4px;
-    box-shadow: inset 3px 3px 0 rgb(0 0 0 / 4%);
+    border-color: #202128;
+    border-radius: 0;
+    box-shadow: inset 4px 4px 0 rgb(0 0 0 / 7%);
+  }
+
+  .pixel-login .login-input:focus {
+    border-color: #202128;
+    box-shadow: inset 4px 4px 0 rgb(0 0 0 / 7%), 4px 4px 0 #8b8e96;
   }
 
   .pixel-login button,
   .pixel-login a {
-    border-radius: 4px;
+    border-radius: 0 !important;
+  }
+
+  .pixel-login h1 {
+    letter-spacing: .03em;
+    text-shadow: 2px 2px 0 #aeb0b6;
+  }
+
+  .pixel-login form > div button span {
+    border-radius: 0;
   }
 
   .pixel-login button[type="submit"] {
     border: 2px solid #202128;
-    background: #77d530;
-    box-shadow: 4px 4px 0 #202128;
+    background: #202128 !important;
+    box-shadow: 6px 6px 0 #8b8e96 !important;
   }
 
   .pixel-login button[type="submit"]:active {
     box-shadow: 1px 1px 0 #202128;
-    transform: translate(3px, 3px);
+    transform: translate(5px, 5px);
+  }
+
+  .pixel-login .grid.grid-cols-3 > button {
+    border: 2px solid #202128;
+    box-shadow: 4px 4px 0 #202128 !important;
+  }
+
+  .pixel-login .grid.grid-cols-3 > button:hover {
+    border-color: #202128;
+    box-shadow: 2px 2px 0 #8b8e96 !important;
+    transform: translate(2px, 2px);
   }
   .planner-button {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold transition hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-50;
