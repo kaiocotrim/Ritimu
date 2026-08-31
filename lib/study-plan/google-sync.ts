@@ -10,6 +10,7 @@ export type StudyPlanGoogleEvent = {
   allDay?: boolean
   recurrence?: string
   recurrenceDays?: number[]
+  recurrenceUntil?: Date | null
 }
 
 export async function createStudyPlanGoogleEvent(userId: string, event: StudyPlanGoogleEvent) {

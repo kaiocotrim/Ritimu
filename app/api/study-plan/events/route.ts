@@ -23,13 +23,15 @@ function parseInput(value: unknown) {
   const recurrenceDays = Array.isArray(body?.recurrenceDays)
     ? [...new Set(body.recurrenceDays.map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6))]
     : []
+  const recurrenceUntil = typeof body?.recurrenceUntil === "string" ? new Date(body.recurrenceUntil) : null
   const courseId = typeof body?.courseId === "string" && body.courseId ? body.courseId : null
   if (!title || title.length > 200) return { error: "Informe um título de até 200 caracteres." } as const
   if (!startAt || !endAt || Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime()) || endAt <= startAt) return { error: "Informe um horário válido." } as const
   if (endAt.getTime() - startAt.getTime() > 24 * 60 * 60 * 1000) return { error: "O evento deve ter menos de 24 horas." } as const
   if (recurrence === "CUSTOM" && recurrenceDays.length === 0) return { error: "Selecione ao menos um dia para a repetição personalizada." } as const
+  if (recurrence !== "NONE" && recurrenceUntil && recurrenceUntil <= startAt) return { error: "A data final deve ser após a data de início." } as const
   if (routineType === "STUDY" && !courseId) return { error: "Selecione uma matéria para a sessão de estudo." } as const
-  return { data: { title, startAt, endAt, routineType, recurrence, recurrenceDays, courseId } } as const
+  return { data: { title, startAt, endAt, routineType, recurrence, recurrenceDays, recurrenceUntil, courseId } } as const
 }
 
 export async function POST(request: Request) {
@@ -55,12 +57,13 @@ export async function POST(request: Request) {
       endAt: input.endAt,
       recurrence: input.recurrence,
       recurrenceDays: input.recurrenceDays,
+      recurrenceUntil: input.recurrenceUntil,
     })
 
     const event = await prisma.$transaction(async (tx) => {
       if (input.routineType !== "STUDY" || !course) {
         return tx.calendarEvent.create({
-          data: { userId: id, title: input.title, startAt: input.startAt, endAt: input.endAt, type: input.routineType === "EXAM" ? CalendarEventType.EXAM : CalendarEventType.PERSONAL, routineType: input.routineType, recurrence: input.recurrence, recurrenceDays: input.recurrenceDays, ...googleEvent! },
+          data: { userId: id, title: input.title, startAt: input.startAt, endAt: input.endAt, type: input.routineType === "EXAM" ? CalendarEventType.EXAM : CalendarEventType.PERSONAL, routineType: input.routineType, recurrence: input.recurrence, recurrenceDays: input.recurrenceDays, recurrenceUntil: input.recurrenceUntil, ...googleEvent! },
         })
       }
 
@@ -76,7 +79,7 @@ export async function POST(request: Request) {
       })
       await tx.studyPlan.update({ where: { id: plan.id }, data: { totalMinutes: { increment: studySession.durationMinutes } } })
       return tx.calendarEvent.create({
-        data: { userId: id, studySessionId: studySession.id, title: input.title, startAt: input.startAt, endAt: input.endAt, type: CalendarEventType.STUDY, routineType: "STUDY", recurrence: input.recurrence, recurrenceDays: input.recurrenceDays, ...googleEvent! },
+        data: { userId: id, studySessionId: studySession.id, title: input.title, startAt: input.startAt, endAt: input.endAt, type: CalendarEventType.STUDY, routineType: "STUDY", recurrence: input.recurrence, recurrenceDays: input.recurrenceDays, recurrenceUntil: input.recurrenceUntil, ...googleEvent! },
       })
     })
     return Response.json({ event }, { status: 201 })

@@ -70,6 +70,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const title = typeof body.title === "string" ? body.title.trim() : existing.title
   const startAt = typeof body.startAt === "string" ? new Date(body.startAt) : existing.startAt
   const endAt = typeof body.endAt === "string" ? new Date(body.endAt) : existing.endAt
+  const recurrenceUntil = typeof body.recurrenceUntil === "string" ? new Date(body.recurrenceUntil) : (body.recurrenceUntil === null ? null : existing.recurrenceUntil)
   if (!title || !endAt || Number.isNaN(startAt.getTime()) || Number.isNaN(endAt.getTime()) || endAt <= startAt) return Response.json({ error: "Título ou horário inválido." }, { status: 400 })
   const recurrence = typeof body.recurrence === "string" && ["NONE", "WEEKLY", "CUSTOM"].includes(body.recurrence) ? body.recurrence : existing.recurrence
   const recurrenceDays = Array.isArray(body.recurrenceDays) ? body.recurrenceDays.map(Number).filter((day) => Number.isInteger(day) && day >= 0 && day <= 6) : existing.recurrenceDays
@@ -86,6 +87,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       endAt,
       recurrence,
       recurrenceDays,
+      recurrenceUntil,
     }
     googleSync = existing.googleEventId
       ? await updateStudyPlanGoogleEvent(id, existing.googleEventId, googleInput, existing.googleCalendarId ?? undefined)
@@ -96,7 +98,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const event = await prisma.$transaction(async (tx) => {
     if (existing.studySessionId && course) await tx.studySession.update({ where: { id: existing.studySessionId }, data: { title, courseId: course.id, subjectName: course.name, scheduledStart: startAt, scheduledEnd: endAt, durationMinutes: Math.round((endAt.getTime() - startAt.getTime()) / 60_000) } })
-    return tx.calendarEvent.update({ where: { id: eventId }, data: { title, startAt, endAt, recurrence, recurrenceDays, ...googleSync } })
+    return tx.calendarEvent.update({ where: { id: eventId }, data: { title, startAt, endAt, recurrence, recurrenceDays, recurrenceUntil, ...googleSync } })
   })
   return Response.json({ event })
 }

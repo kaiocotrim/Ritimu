@@ -85,8 +85,8 @@ export async function googleCalendarRequest<T>(userId: string, path: string, ini
   return data as T
 }
 
-export function toGoogleEvent(input: { title: string; description?: string | null; startAt: Date; endAt?: Date | null; allDay: boolean; recurrence?: string; recurrenceDays?: number[] }) {
-  const recurrence = toGoogleRecurrence(input.recurrence, input.recurrenceDays)
+export function toGoogleEvent(input: { title: string; description?: string | null; startAt: Date; endAt?: Date | null; allDay: boolean; recurrence?: string; recurrenceDays?: number[]; recurrenceUntil?: Date | null }) {
+  const recurrence = toGoogleRecurrence(input.recurrence, input.recurrenceDays, input.recurrenceUntil)
   if (input.allDay) {
     const date = input.startAt.toISOString().slice(0, 10)
     const end = input.endAt ?? new Date(input.startAt.getTime() + 86_400_000)
@@ -95,9 +95,13 @@ export function toGoogleEvent(input: { title: string; description?: string | nul
   return { summary: input.title, description: input.description ?? undefined, start: { dateTime: input.startAt.toISOString(), timeZone: RITIMU_TIME_ZONE }, end: { dateTime: (input.endAt ?? new Date(input.startAt.getTime() + 3_600_000)).toISOString(), timeZone: RITIMU_TIME_ZONE }, recurrence }
 }
 
-function toGoogleRecurrence(recurrence?: string, recurrenceDays: number[] = []) {
-  if (recurrence === "WEEKLY") return ["RRULE:FREQ=WEEKLY"]
+function toGoogleRecurrence(recurrence?: string, recurrenceDays: number[] = [], recurrenceUntil?: Date | null) {
+  if (recurrence === "WEEKLY") {
+    const base = "RRULE:FREQ=WEEKLY"
+    return recurrenceUntil ? [`${base};UNTIL=${recurrenceUntil.toISOString().slice(0, 10).replace(/-/g, "")}`] : [base]
+  }
   if (recurrence !== "CUSTOM" || !recurrenceDays.length) return undefined
   const googleDays = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"]
-  return [`RRULE:FREQ=WEEKLY;BYDAY=${recurrenceDays.map((day) => googleDays[day]).join(",")}`]
+  const base = `RRULE:FREQ=WEEKLY;BYDAY=${recurrenceDays.map((day) => googleDays[day]).join(",")}`
+  return recurrenceUntil ? [`${base};UNTIL=${recurrenceUntil.toISOString().slice(0, 10).replace(/-/g, "")}`] : [base]
 }
