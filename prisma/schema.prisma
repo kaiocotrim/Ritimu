@@ -143,6 +143,9 @@ model X1Match {
   currentCell         Int?
   turnTimeSeconds     Int?
   allowCapture        Boolean              @default(false)
+  captureLimit        Int                  @default(3)
+  capturesX           Int                  @default(0)
+  capturesO           Int                  @default(0)
   turnStartedAt       DateTime?
   isBotMatch          Boolean              @default(false)
   botDifficulty       X1BotDifficulty?

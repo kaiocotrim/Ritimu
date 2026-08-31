@@ -15,7 +15,7 @@ export function X1Home() {
   const [code, setCode] = useState(""), [createdCode, setCreatedCode] = useState(""), [copied, setCopied] = useState(false)
   const [mode, setMode] = useState<"CREATE" | "JOIN">("CREATE")
   const [busy, setBusy] = useState(false), [error, setError] = useState("")
-  const [turnTimeSeconds, setTurnTimeSeconds] = useState<number | null>(30), [allowCapture, setAllowCapture] = useState(false), [vsBot, setVsBot] = useState(false)
+  const [turnTimeSeconds, setTurnTimeSeconds] = useState<number | null>(30), [allowCapture, setAllowCapture] = useState(false), [captureLimit, setCaptureLimit] = useState(3), [vsBot, setVsBot] = useState(false)
   const [botDifficulty, setBotDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">("MEDIUM"), [difficulty, setDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">("MEDIUM")
   const [topic, setTopic] = useState<TopicOption | null>(null), [subtopic, setSubtopic] = useState("ALL")
 
@@ -23,7 +23,7 @@ export function X1Home() {
     setError("")
     if (!topic) { setError("Escolha ou crie um tema antes de continuar."); return }
     setBusy(true)
-    const response = await fetch("/api/x1/rooms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turnTimeSeconds, allowCapture, vsBot, botDifficulty, difficulty, topicId: topic.id, subtopic }) })
+    const response = await fetch("/api/x1/rooms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turnTimeSeconds, allowCapture, captureLimit, vsBot, botDifficulty, difficulty, topicId: topic.id, subtopic }) })
     const body: { code?: string; error?: string } = await response.json()
     setBusy(false)
     if (!response.ok || !body.code) return setError(body.error ?? "Não foi possível criar a sala.")
@@ -70,6 +70,7 @@ export function X1Home() {
           <ToggleRow checked={vsBot} onChange={setVsBot} icon={<Bot className="size-4" />} title="Jogar contra o Ritimu Bot" description="Comece imediatamente, sem esperar outro jogador." />
           {vsBot && <motion.fieldset initial={reduceMotion ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-3 overflow-hidden"><legend className="text-xs font-black">Dificuldade do bot</legend><div className="mt-2 grid grid-cols-3 gap-2">{difficulties.map(([value, label]) => <OptionButton key={value} active={botDifficulty === value} onClick={() => setBotDifficulty(value)}>{label}</OptionButton>)}</div></motion.fieldset>}
           <ToggleRow checked={allowCapture} onChange={setAllowCapture} icon={<RefreshCcw className="size-4" />} title="Permitir captura de casa" description="Ao acertar, você pode remarcar uma casa adversária." />
+          {allowCapture && <motion.fieldset initial={reduceMotion ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-3 overflow-hidden"><legend className="text-xs font-black">Roubos por jogador</legend><p className="mt-1 text-[10px] text-black/40">Cada jogador poderá capturar até esta quantidade.</p><div className="mt-2 grid grid-cols-4 gap-2">{[1, 2, 3, 5].map((value) => <OptionButton key={value} active={captureLimit === value} onClick={() => setCaptureLimit(value)}>{value} {value === 1 ? "roubo" : "roubos"}</OptionButton>)}</div></motion.fieldset>}
           <motion.button whileTap={reduceMotion ? undefined : { scale: .98 }} onClick={createRoom} disabled={busy || !topic} className="mt-5 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#50c735] text-sm font-black text-[#12250d] transition hover:bg-[#45b92d] disabled:cursor-not-allowed disabled:opacity-45"><Swords className="size-4" />{busy ? "Preparando…" : vsBot ? "Jogar contra o bot" : "Criar sala"}</motion.button>
         </div> : <motion.div initial={reduceMotion ? false : { opacity: 0, scale: .97 }} animate={{ opacity: 1, scale: 1 }} className="mt-6 text-center"><p className="text-xs font-bold text-black/40">Compartilhe este código</p><div className="mt-3 flex items-center justify-between rounded-xl border border-[#bce8a8] bg-[#f7fff3] px-5 py-4"><strong className="text-2xl tracking-[.28em]">{createdCode}</strong><button onClick={copyCode} aria-label="Copiar código" className="cursor-pointer rounded-lg p-2 hover:bg-[#e9fbdc]">{copied ? <Check className="size-5 text-[#54bc2b]" /> : <Copy className="size-5" />}</button></div><p className="mt-3 text-xs text-black/40">Preparando perguntas sobre {topic?.name}…</p><button onClick={() => enterRoom(createdCode)} className="mt-4 h-12 w-full cursor-pointer rounded-xl bg-[#72d43a] text-sm font-black">Entrar na sala</button></motion.div>}
       </motion.section> :

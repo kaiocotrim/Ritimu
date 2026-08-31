@@ -12,6 +12,9 @@ export type X1PublicMatch = {
   currentTurnUserId: string | null
   turnTimeSeconds: number | null
   allowCapture: boolean
+  captureLimit: number
+  capturesX: number
+  capturesO: number
   isBotMatch: boolean
   botDifficulty: "EASY" | "MEDIUM" | "HARD" | null
   topic: { id: string; name: string } | null
