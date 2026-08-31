@@ -3,6 +3,7 @@ import { headers } from "next/headers"
 import { auth } from "@/lib/auth"
 import { CalendarEventType, StudyPlanPeriodType } from "@/lib/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
+import { createStudyPlanGoogleEvent, deleteStudyPlanGoogleEvent, studyPlanGoogleErrorResponse } from "@/lib/study-plan/google-sync"
 
 const routineTypes = new Set(["STUDY", "GYM", "WORK", "READING", "REVIEW", "EXAM", "BREAK", "OTHER"])
 const recurrences = new Set(["NONE", "WEEKLY", "CUSTOM"])
@@ -32,9 +33,12 @@ function parseInput(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  let authenticatedUserId: string | null = null
+  let googleEvent: Awaited<ReturnType<typeof createStudyPlanGoogleEvent>> | null = null
   try {
     const id = await userId()
     if (!id) return Response.json({ error: "Não autenticado" }, { status: 401 })
+    authenticatedUserId = id
     const parsed = parseInput(await request.json().catch(() => null))
     if ("error" in parsed) return Response.json({ error: parsed.error }, { status: 400 })
     const { courseId, ...input } = parsed.data
@@ -44,10 +48,19 @@ export async function POST(request: Request) {
       : null
     if (courseId && !course) return Response.json({ error: "Matéria não encontrada." }, { status: 404 })
 
+    googleEvent = await createStudyPlanGoogleEvent(id, {
+      title: input.title,
+      description: course ? `Matéria: ${course.name}` : "Criado pelo plano de estudos do Ritimu",
+      startAt: input.startAt,
+      endAt: input.endAt,
+      recurrence: input.recurrence,
+      recurrenceDays: input.recurrenceDays,
+    })
+
     const event = await prisma.$transaction(async (tx) => {
       if (input.routineType !== "STUDY" || !course) {
         return tx.calendarEvent.create({
-          data: { userId: id, title: input.title, startAt: input.startAt, endAt: input.endAt, type: input.routineType === "EXAM" ? CalendarEventType.EXAM : CalendarEventType.PERSONAL, routineType: input.routineType, recurrence: input.recurrence, recurrenceDays: input.recurrenceDays },
+          data: { userId: id, title: input.title, startAt: input.startAt, endAt: input.endAt, type: input.routineType === "EXAM" ? CalendarEventType.EXAM : CalendarEventType.PERSONAL, routineType: input.routineType, recurrence: input.recurrence, recurrenceDays: input.recurrenceDays, ...googleEvent! },
         })
       }
 
@@ -63,12 +76,16 @@ export async function POST(request: Request) {
       })
       await tx.studyPlan.update({ where: { id: plan.id }, data: { totalMinutes: { increment: studySession.durationMinutes } } })
       return tx.calendarEvent.create({
-        data: { userId: id, studySessionId: studySession.id, title: input.title, startAt: input.startAt, endAt: input.endAt, type: CalendarEventType.STUDY, routineType: "STUDY", recurrence: input.recurrence, recurrenceDays: input.recurrenceDays },
+        data: { userId: id, studySessionId: studySession.id, title: input.title, startAt: input.startAt, endAt: input.endAt, type: CalendarEventType.STUDY, routineType: "STUDY", recurrence: input.recurrence, recurrenceDays: input.recurrenceDays, ...googleEvent! },
       })
     })
     return Response.json({ event }, { status: 201 })
   } catch (error) {
+    if (authenticatedUserId && googleEvent) {
+      await deleteStudyPlanGoogleEvent(authenticatedUserId, googleEvent.googleEventId, googleEvent.googleCalendarId)
+        .catch((cleanupError) => console.error("Google event cleanup failed", cleanupError))
+    }
     console.error("Study planner event creation failed", error)
-    return Response.json({ error: "Não foi possível salvar o evento. Atualize a página e tente novamente." }, { status: 500 })
+    return studyPlanGoogleErrorResponse(error)
   }
 }

@@ -59,23 +59,34 @@ export async function getGoogleCalendarAccessToken(userId: string) {
 }
 
 export async function googleCalendarRequest<T>(userId: string, path: string, init?: RequestInit): Promise<T> {
-  const accessToken = await getGoogleCalendarAccessToken(userId)
-  const response = await fetch(`https://www.googleapis.com/calendar/v3${path}`, {
-    ...init,
-    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", ...init?.headers },
-    cache: "no-store",
-  })
+  let accessToken = await getGoogleCalendarAccessToken(userId)
+  const execute = (token: string) => fetch(`https://www.googleapis.com/calendar/v3${path}`, { ...init, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...init?.headers }, cache: "no-store" })
+  let response = await execute(accessToken)
+  if (response.status === 401) {
+    const { account } = await getGoogleCalendarConnection(userId)
+    if (!account) throw new GoogleCalendarError("REAUTH_REQUIRED", "Reconecte sua conta Google.", 401)
+    accessToken = await refreshGoogleToken(account)
+    response = await execute(accessToken)
+  }
   if (response.status === 401) throw new GoogleCalendarError("REAUTH_REQUIRED", "A autorização do Google expirou ou foi revogada.", 401)
   const data = await response.json().catch(() => null)
   if (!response.ok) throw new GoogleCalendarError("API_ERROR", (data as { error?: { message?: string } } | null)?.error?.message ?? "Falha na comunicação com o Google Calendar.", response.status === 403 ? 403 : 502)
   return data as T
 }
 
-export function toGoogleEvent(input: { title: string; description?: string | null; startAt: Date; endAt?: Date | null; allDay: boolean }) {
+export function toGoogleEvent(input: { title: string; description?: string | null; startAt: Date; endAt?: Date | null; allDay: boolean; recurrence?: string; recurrenceDays?: number[] }) {
+  const recurrence = toGoogleRecurrence(input.recurrence, input.recurrenceDays)
   if (input.allDay) {
     const date = input.startAt.toISOString().slice(0, 10)
     const end = input.endAt ?? new Date(input.startAt.getTime() + 86_400_000)
-    return { summary: input.title, description: input.description ?? undefined, start: { date }, end: { date: end.toISOString().slice(0, 10) } }
+    return { summary: input.title, description: input.description ?? undefined, start: { date }, end: { date: end.toISOString().slice(0, 10) }, recurrence }
   }
-  return { summary: input.title, description: input.description ?? undefined, start: { dateTime: input.startAt.toISOString(), timeZone: RITIMU_TIME_ZONE }, end: { dateTime: (input.endAt ?? new Date(input.startAt.getTime() + 3_600_000)).toISOString(), timeZone: RITIMU_TIME_ZONE } }
+  return { summary: input.title, description: input.description ?? undefined, start: { dateTime: input.startAt.toISOString(), timeZone: RITIMU_TIME_ZONE }, end: { dateTime: (input.endAt ?? new Date(input.startAt.getTime() + 3_600_000)).toISOString(), timeZone: RITIMU_TIME_ZONE }, recurrence }
+}
+
+function toGoogleRecurrence(recurrence?: string, recurrenceDays: number[] = []) {
+  if (recurrence === "WEEKLY") return ["RRULE:FREQ=WEEKLY"]
+  if (recurrence !== "CUSTOM" || !recurrenceDays.length) return undefined
+  const googleDays = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"]
+  return [`RRULE:FREQ=WEEKLY;BYDAY=${recurrenceDays.map((day) => googleDays[day]).join(",")}`]
 }

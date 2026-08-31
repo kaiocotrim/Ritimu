@@ -5,6 +5,7 @@ import { awardXp, XP_REWARDS, XpSource } from "@/lib/gamification"
 import { CalendarEventStatus, StudySessionStatus } from "@/lib/generated/prisma/enums"
 import { prisma } from "@/lib/prisma"
 import { getDateKey, getDayRange } from "@/lib/study-plan/today"
+import { createStudyPlanGoogleEvent, deleteStudyPlanGoogleEvent, studyPlanGoogleErrorResponse, updateStudyPlanGoogleEvent } from "@/lib/study-plan/google-sync"
 
 async function userId() {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -76,9 +77,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const course = courseId ? await prisma.classroomCourse.findFirst({ where: { id: courseId, userId: id }, select: { id: true, name: true } }) : null
   if (existing.studySessionId && !course) return Response.json({ error: "Selecione uma matéria válida." }, { status: 400 })
 
+  let googleSync: { googleEventId?: string; googleCalendarId?: string; syncedWithGoogle: boolean; googleUpdatedAt: Date }
+  try {
+    const googleInput = {
+      title,
+      description: course ? `Matéria: ${course.name}` : "Criado pelo plano de estudos do Ritimu",
+      startAt,
+      endAt,
+      recurrence,
+      recurrenceDays,
+    }
+    googleSync = existing.googleEventId
+      ? await updateStudyPlanGoogleEvent(id, existing.googleEventId, googleInput, existing.googleCalendarId ?? undefined)
+      : await createStudyPlanGoogleEvent(id, googleInput)
+  } catch (error) {
+    return studyPlanGoogleErrorResponse(error)
+  }
+
   const event = await prisma.$transaction(async (tx) => {
     if (existing.studySessionId && course) await tx.studySession.update({ where: { id: existing.studySessionId }, data: { title, courseId: course.id, subjectName: course.name, scheduledStart: startAt, scheduledEnd: endAt, durationMinutes: Math.round((endAt.getTime() - startAt.getTime()) / 60_000) } })
-    return tx.calendarEvent.update({ where: { id: eventId }, data: { title, startAt, endAt, recurrence, recurrenceDays } })
+    return tx.calendarEvent.update({ where: { id: eventId }, data: { title, startAt, endAt, recurrence, recurrenceDays, ...googleSync } })
   })
   return Response.json({ event })
 }
@@ -87,8 +105,15 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   const id = await userId()
   if (!id) return Response.json({ error: "Não autenticado" }, { status: 401 })
   const eventId = (await params).id
-  const existing = await prisma.calendarEvent.findFirst({ where: { id: eventId, userId: id }, select: { id: true, studySessionId: true } })
+  const existing = await prisma.calendarEvent.findFirst({ where: { id: eventId, userId: id }, select: { id: true, studySessionId: true, googleEventId: true, googleCalendarId: true } })
   if (!existing) return Response.json({ error: "Evento não encontrado." }, { status: 404 })
+  if (existing.googleEventId) {
+    try {
+      await deleteStudyPlanGoogleEvent(id, existing.googleEventId, existing.googleCalendarId ?? undefined)
+    } catch (error) {
+      return studyPlanGoogleErrorResponse(error)
+    }
+  }
   if (existing.studySessionId) await prisma.studySession.delete({ where: { id: existing.studySessionId } })
   else await prisma.calendarEvent.delete({ where: { id: eventId } })
   return new Response(null, { status: 204 })
