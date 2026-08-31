@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, Brain, Flag, Home, Trophy, User } from "lucide-react"
+import { BookOpen, Brain, Flag, Gamepad2, Home, Trophy, User } from "lucide-react"
 
 const navigationItems = [
   { href: "/dashboard", label: "Início", Icon: Home },
@@ -10,6 +10,7 @@ const navigationItems = [
   { href: "/metas", label: "Missões", Icon: Flag },
   { href: "/plano-de-estudos", label: "Meu plano", Icon: Brain },
   { href: "/ranking", label: "Ranking", Icon: Trophy },
+  { href: "/x1", label: "X1", Icon: Gamepad2 },
   { href: "/perfil", label: "Perfil", Icon: User },
 ]
 

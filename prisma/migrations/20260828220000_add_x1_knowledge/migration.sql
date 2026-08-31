@@ -1,0 +1,24 @@
+-- Historical migration retained because it has already been applied to existing databases.
+CREATE TYPE "X1MatchStatus" AS ENUM ('WAITING','PREPARING','PLAYING','FINISHED','ABANDONED','CANCELED');
+CREATE TABLE "X1Question" ("id" TEXT PRIMARY KEY,"subject" TEXT NOT NULL,"topic" TEXT,"question" TEXT NOT NULL,"options" JSONB NOT NULL,"correctAnswer" TEXT NOT NULL,"explanation" TEXT,"difficulty" INTEGER NOT NULL DEFAULT 1,"active" BOOLEAN NOT NULL DEFAULT true,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE TABLE "X1Match" ("id" TEXT PRIMARY KEY,"code" TEXT NOT NULL,"status" "X1MatchStatus" NOT NULL DEFAULT 'WAITING',"playerXId" TEXT NOT NULL,"playerOId" TEXT,"playerXSubject" TEXT,"playerOSubject" TEXT,"currentTurnUserId" TEXT,"winnerId" TEXT,"board" JSONB NOT NULL,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"startedAt" TIMESTAMP(3),"finishedAt" TIMESTAMP(3),"updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE TABLE "X1MatchQuestion" ("id" TEXT PRIMARY KEY,"matchId" TEXT NOT NULL,"questionId" TEXT NOT NULL,"order" INTEGER NOT NULL,"used" BOOLEAN NOT NULL DEFAULT false,"selectedCell" INTEGER,"selectedByPlayerId" TEXT,"presentedAt" TIMESTAMP(3),"answeredAt" TIMESTAMP(3));
+CREATE TABLE "X1Move" ("id" TEXT PRIMARY KEY,"matchId" TEXT NOT NULL,"playerId" TEXT NOT NULL,"cell" INTEGER NOT NULL,"questionId" TEXT NOT NULL,"selectedAnswer" TEXT NOT NULL,"correct" BOOLEAN NOT NULL,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE UNIQUE INDEX "X1Match_code_key" ON "X1Match"("code");
+CREATE INDEX "X1Match_playerXId_status_idx" ON "X1Match"("playerXId","status");
+CREATE INDEX "X1Match_playerOId_status_idx" ON "X1Match"("playerOId","status");
+CREATE UNIQUE INDEX "X1MatchQuestion_matchId_order_key" ON "X1MatchQuestion"("matchId","order");
+CREATE UNIQUE INDEX "X1MatchQuestion_matchId_questionId_key" ON "X1MatchQuestion"("matchId","questionId");
+CREATE INDEX "X1MatchQuestion_matchId_used_order_idx" ON "X1MatchQuestion"("matchId","used","order");
+CREATE INDEX "X1Move_matchId_createdAt_idx" ON "X1Move"("matchId","createdAt");
+CREATE INDEX "X1Move_playerId_idx" ON "X1Move"("playerId");
+CREATE INDEX "X1Question_subject_active_idx" ON "X1Question"("subject","active");
+ALTER TABLE "X1Match" ADD CONSTRAINT "X1Match_playerXId_fkey" FOREIGN KEY ("playerXId") REFERENCES "user"("id") ON DELETE CASCADE;
+ALTER TABLE "X1Match" ADD CONSTRAINT "X1Match_playerOId_fkey" FOREIGN KEY ("playerOId") REFERENCES "user"("id") ON DELETE SET NULL;
+ALTER TABLE "X1Match" ADD CONSTRAINT "X1Match_winnerId_fkey" FOREIGN KEY ("winnerId") REFERENCES "user"("id") ON DELETE SET NULL;
+ALTER TABLE "X1MatchQuestion" ADD CONSTRAINT "X1MatchQuestion_matchId_fkey" FOREIGN KEY ("matchId") REFERENCES "X1Match"("id") ON DELETE CASCADE;
+ALTER TABLE "X1MatchQuestion" ADD CONSTRAINT "X1MatchQuestion_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "X1Question"("id") ON DELETE RESTRICT;
+ALTER TABLE "X1MatchQuestion" ADD CONSTRAINT "X1MatchQuestion_selectedByPlayerId_fkey" FOREIGN KEY ("selectedByPlayerId") REFERENCES "user"("id") ON DELETE SET NULL;
+ALTER TABLE "X1Move" ADD CONSTRAINT "X1Move_matchId_fkey" FOREIGN KEY ("matchId") REFERENCES "X1Match"("id") ON DELETE CASCADE;
+ALTER TABLE "X1Move" ADD CONSTRAINT "X1Move_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "user"("id") ON DELETE CASCADE;
+ALTER TABLE "X1Move" ADD CONSTRAINT "X1Move_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "X1Question"("id") ON DELETE RESTRICT;
