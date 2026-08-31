@@ -47,6 +47,12 @@ enum X1MatchStatus {
   CANCELED
 }
 
+enum X1BotDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 model X1Question {
   id            String    @id @default(cuid())
   subject       String
@@ -64,27 +70,32 @@ model X1Question {
 }
 
 model X1Match {
-  id                String        @id @default(cuid())
-  code              String        @unique
-  status            X1MatchStatus @default(WAITING)
+  id                String           @id @default(cuid())
+  code              String           @unique
+  status            X1MatchStatus    @default(WAITING)
   playerXId         String
-  playerX           User          @relation("X1PlayerX", fields: [playerXId], references: [id], onDelete: Cascade)
+  playerX           User             @relation("X1PlayerX", fields: [playerXId], references: [id], onDelete: Cascade)
   playerOId         String?
-  playerO           User?         @relation("X1PlayerO", fields: [playerOId], references: [id], onDelete: SetNull)
+  playerO           User?            @relation("X1PlayerO", fields: [playerOId], references: [id], onDelete: SetNull)
   playerXSubject    String?
   playerOSubject    String?
   currentTurnUserId String?
   currentQuestionId String?
-  currentQuestion   X1Question?   @relation("X1CurrentQuestion", fields: [currentQuestionId], references: [id], onDelete: SetNull)
+  currentQuestion   X1Question?      @relation("X1CurrentQuestion", fields: [currentQuestionId], references: [id], onDelete: SetNull)
   currentCell       Int?
+  turnTimeSeconds   Int?
+  allowCapture      Boolean          @default(false)
+  turnStartedAt     DateTime?
+  isBotMatch        Boolean          @default(false)
+  botDifficulty     X1BotDifficulty?
   winnerId          String?
-  winner            User?         @relation("X1Winner", fields: [winnerId], references: [id], onDelete: SetNull)
+  winner            User?            @relation("X1Winner", fields: [winnerId], references: [id], onDelete: SetNull)
   board             Json
   moves             X1Move[]
-  createdAt         DateTime      @default(now())
+  createdAt         DateTime         @default(now())
   startedAt         DateTime?
   finishedAt        DateTime?
-  updatedAt         DateTime      @updatedAt
+  updatedAt         DateTime         @updatedAt
 
   @@index([playerXId, status])
   @@index([playerOId, status])
@@ -94,8 +105,9 @@ model X1Move {
   id             String     @id @default(cuid())
   matchId        String
   match          X1Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  playerId       String
-  player         User       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  playerId       String?
+  player         User?      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  isBot          Boolean    @default(false)
   cell           Int
   questionId     String
   question       X1Question @relation(fields: [questionId], references: [id], onDelete: Restrict)

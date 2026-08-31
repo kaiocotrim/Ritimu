@@ -145,6 +145,16 @@
 }
 
 @layer components {
+  .x1-screen button:not(:disabled),
+  .x1-screen label:has(input:not(:disabled)) {
+    cursor: pointer;
+  }
+
+  .x1-screen button:disabled,
+  .x1-screen input:disabled {
+    cursor: not-allowed;
+  }
+
   .planner-input {
     @apply h-12 w-full rounded-2xl border border-black/10 bg-black/[.025] px-4 text-sm outline-none transition focus:border-black/25 focus:bg-white focus:ring-4 focus:ring-black/[.035];
   }

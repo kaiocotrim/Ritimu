@@ -10,9 +10,14 @@ export type X1PublicMatch = {
   playerXSubject: string | null
   playerOSubject: string | null
   currentTurnUserId: string | null
+  turnTimeSeconds: number | null
+  allowCapture: boolean
+  isBotMatch: boolean
+  botDifficulty: "EASY" | "MEDIUM" | "HARD" | null
+  turnEndsAt: string | null
   winner: X1Player | null
   activeQuestion: { id: string; subject: string; question: string; options: string[]; cell: number } | null
-  moves: { playerId: string; correct: boolean }[]
+  moves: { playerId: string | null; correct: boolean; isBot: boolean }[]
   startedAt: string | null
   finishedAt: string | null
 }
