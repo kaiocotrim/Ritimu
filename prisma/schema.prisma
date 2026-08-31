@@ -29,42 +29,82 @@ model User {
   studyPlans                  StudyPlan[]
   studyContents               StudyContent[]
   xpTransactions              XpTransaction[]
-  duelsCreated                Duel[]                       @relation("DuelChallenger")
-  duelsReceived               Duel[]                       @relation("DuelOpponent")
+  x1MatchesAsX                X1Match[]                    @relation("X1PlayerX")
+  x1MatchesAsO                X1Match[]                    @relation("X1PlayerO")
+  x1MatchesWon                X1Match[]                    @relation("X1Winner")
+  x1Moves                     X1Move[]
 
   @@unique([email])
   @@map("user")
 }
 
-enum DuelStatus {
-  PENDING
-  ACTIVE
-  DECLINED
+enum X1MatchStatus {
+  WAITING
+  PREPARING
+  PLAYING
+  FINISHED
+  ABANDONED
   CANCELED
-  COMPLETED
 }
 
-model Duel {
-  id                  String     @id @default(cuid())
-  challengerId        String
-  challenger          User       @relation("DuelChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
-  opponentId          String
-  opponent            User       @relation("DuelOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
-  status              DuelStatus @default(PENDING)
-  durationHours       Int
-  startsAt            DateTime?
-  endsAt              DateTime?
-  completedAt         DateTime?
-  challengerInitialXp Int?
-  opponentInitialXp   Int?
-  challengerFinalXp   Int?
-  opponentFinalXp     Int?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+model X1Question {
+  id            String    @id @default(cuid())
+  subject       String
+  question      String
+  options       Json
+  correctAnswer String
+  explanation   String?
+  active        Boolean   @default(true)
+  moves         X1Move[]
+  matches       X1Match[] @relation("X1CurrentQuestion")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  @@index([challengerId, status, createdAt])
-  @@index([opponentId, status, createdAt])
-  @@index([status, endsAt])
+  @@index([subject, active])
+}
+
+model X1Match {
+  id                String        @id @default(cuid())
+  code              String        @unique
+  status            X1MatchStatus @default(WAITING)
+  playerXId         String
+  playerX           User          @relation("X1PlayerX", fields: [playerXId], references: [id], onDelete: Cascade)
+  playerOId         String?
+  playerO           User?         @relation("X1PlayerO", fields: [playerOId], references: [id], onDelete: SetNull)
+  playerXSubject    String?
+  playerOSubject    String?
+  currentTurnUserId String?
+  currentQuestionId String?
+  currentQuestion   X1Question?   @relation("X1CurrentQuestion", fields: [currentQuestionId], references: [id], onDelete: SetNull)
+  currentCell       Int?
+  winnerId          String?
+  winner            User?         @relation("X1Winner", fields: [winnerId], references: [id], onDelete: SetNull)
+  board             Json
+  moves             X1Move[]
+  createdAt         DateTime      @default(now())
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  updatedAt         DateTime      @updatedAt
+
+  @@index([playerXId, status])
+  @@index([playerOId, status])
+}
+
+model X1Move {
+  id             String     @id @default(cuid())
+  matchId        String
+  match          X1Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  playerId       String
+  player         User       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  cell           Int
+  questionId     String
+  question       X1Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  selectedAnswer String
+  correct        Boolean
+  createdAt      DateTime   @default(now())
+
+  @@index([matchId, createdAt])
+  @@index([playerId])
 }
 
 model Session {
