@@ -107,14 +107,20 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   const eventId = (await params).id
   const existing = await prisma.calendarEvent.findFirst({ where: { id: eventId, userId: id }, select: { id: true, studySessionId: true, googleEventId: true, googleCalendarId: true } })
   if (!existing) return Response.json({ error: "Evento não encontrado." }, { status: 404 })
+
+  await prisma.$transaction(async (tx) => {
+    await tx.calendarEvent.delete({ where: { id: existing.id } })
+    if (existing.studySessionId) await tx.studySession.delete({ where: { id: existing.studySessionId } })
+  })
+
+  let warning: string | null = null
   if (existing.googleEventId) {
     try {
       await deleteStudyPlanGoogleEvent(id, existing.googleEventId, existing.googleCalendarId ?? undefined)
     } catch (error) {
-      return studyPlanGoogleErrorResponse(error)
+      console.error("Google Calendar event deletion failed after local deletion", error)
+      warning = "O evento foi apagado do Ritimu, mas não foi possível removê-lo do Google Calendar. Verifique a conta Google conectada."
     }
   }
-  if (existing.studySessionId) await prisma.studySession.delete({ where: { id: existing.studySessionId } })
-  else await prisma.calendarEvent.delete({ where: { id: eventId } })
-  return new Response(null, { status: 204 })
+  return Response.json({ deleted: true, googleSynced: !warning, warning })
 }

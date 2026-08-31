@@ -97,6 +97,28 @@ export function StudyPlanner({ initialCourses }: { initialCourses: Course[] }) {
     } else setError("Não foi possível alterar a visualização do plano.")
   }
 
+  async function deleteSelectedEvents(ids: string[]) {
+    if (!await confirmDelete(ids.length)) return
+    setBusy(true)
+    setError(null)
+    try {
+      const responses = await Promise.all(ids.map(async (id) => {
+        const response = await fetch(`/api/study-plan/events/${id}`, { method: "DELETE" })
+        const data = await response.json().catch(() => null)
+        if (!response.ok) throw new Error(data?.error ?? "Não foi possível excluir o evento.")
+        return data as { warning?: string | null }
+      }))
+      const warning = responses.find((item) => item.warning)?.warning
+      if (warning) setError(warning)
+      setSelectedDay(null)
+      await load()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Não foi possível excluir o evento.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (configured === null && loading) return <Loading />
   if (configured === false) return <Onboarding busy={busy} onChoose={selectView} />
 
@@ -141,7 +163,7 @@ export function StudyPlanner({ initialCourses }: { initialCourses: Course[] }) {
         {loading ? <Loading compact /> : view === "WEEKLY" ? <Week from={range.from} events={calendarEvents} onDay={(date) => setSelectedDay(date)} onEvent={(event) => setEditing({ event: event.source, date: event.startAt })} /> : <Month anchor={anchor} events={calendarEvents} onDay={(date) => setSelectedDay(date)} onEvent={(event) => setEditing({ event: event.source, date: event.startAt })} />}
       </motion.div>
     </AnimatePresence>
-    {selectedDay && <DayAgenda date={selectedDay} events={calendarEvents.filter((event) => sameDay(event.startAt, selectedDay))} onClose={() => setSelectedDay(null)} onAdd={() => { setSelectedDay(null); setEditing({ event: null, date: selectedDay }) }} onEvent={(event) => { setSelectedDay(null); setEditing({ event: event.source, date: event.startAt }) }} onDeleteSelected={async (ids) => { if (!await confirmDelete(ids.length)) return; setBusy(true); await Promise.all(ids.map((id) => fetch(`/api/study-plan/events/${id}`, { method: "DELETE" }))); setBusy(false); setSelectedDay(null); await load() }} />}
+    {selectedDay && <DayAgenda date={selectedDay} events={calendarEvents.filter((event) => sameDay(event.startAt, selectedDay))} onClose={() => setSelectedDay(null)} onAdd={() => { setSelectedDay(null); setEditing({ event: null, date: selectedDay }) }} onEvent={(event) => { setSelectedDay(null); setEditing({ event: event.source, date: event.startAt }) }} onDeleteSelected={deleteSelectedEvents} />}
     {editing && <Editor value={editing} courses={courses} busy={busy} setBusy={setBusy} setError={setError} onClose={() => setEditing(null)} onSaved={async () => { setEditing(null); await load() }} />}
   </motion.div>
 }
@@ -305,7 +327,7 @@ function Editor({ value, courses, busy, setBusy, setError, onClose, onSaved }: {
   }, [current, kind, step])
   async function save() { setBusy(true); setError(null); const payload = { title, routineType: kind, courseId: kind === "STUDY" ? courseId : null, startAt: new Date(`${date}T${startTime}:00`).toISOString(), endAt: new Date(`${date}T${endTime}:00`).toISOString(), recurrence, recurrenceDays: days }; const response = await fetch(current ? `/api/study-plan/events/${current.id}` : "/api/study-plan/events", { method: current ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }); const data = await response.json().catch(() => null); setBusy(false); if (!response.ok) return setError(data?.error ?? "Não foi possível salvar o evento."); await onSaved() }
   async function complete() { if (!current) return; setBusy(true); await fetch(`/api/study-plan/events/${current.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ completed: current.status !== "COMPLETED" }) }); setBusy(false); await onSaved() }
-  async function remove() { if (!current || !await confirmDelete()) return; setBusy(true); await fetch(`/api/study-plan/events/${current.id}`, { method: "DELETE" }); setBusy(false); await onSaved() }
+  async function remove() { if (!current || !await confirmDelete()) return; setBusy(true); setError(null); try { const response = await fetch(`/api/study-plan/events/${current.id}`, { method: "DELETE" }); const data = await response.json().catch(() => null); if (!response.ok) return setError(data?.error ?? "Não foi possível excluir o evento."); if (data?.warning) setError(data.warning); await onSaved() } catch (cause) { setError(cause instanceof Error ? cause.message : "Não foi possível excluir o evento.") } finally { setBusy(false) } }
   return <Modal onClose={onClose}><div className="mb-6 flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-widest text-[#45B950]">{current ? "Editar evento" : "Novo evento"}</p><h2 className="mt-1 text-2xl font-bold">{step === 1 ? "O que você quer adicionar?" : meta(kind).label}</h2></div><Close onClick={onClose} /></div>{step === 1 ? <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{kinds.map((item) => { const Icon = item.icon; return <button key={item.value} onClick={() => { setKind(item.value); setStep(2) }} className={`rounded-2xl p-4 text-left transition hover:-translate-y-0.5 ${item.color}`}><Icon className="mb-5 size-5" /><strong className="block text-sm">{item.label}</strong></button> })}</div> : <div className="space-y-5"><Field label={kind === "STUDY" ? "Objetivo" : "Título"}><input className="planner-input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={kind === "STUDY" ? "Estudar modelo entidade-relacionamento" : meta(kind).label} autoFocus /></Field>{kind === "STUDY" && <Field label="Matéria"><select className="planner-input" value={courseId} onChange={(e) => setCourseId(e.target.value)}><option value="">Selecione uma matéria</option>{courses.map((course) => <option key={course.id} value={course.id}>{course.name}</option>)}</select>{!courses.length && <p className="mt-2 text-xs text-amber-700">Sincronize suas matérias em Disciplinas primeiro.</p>}</Field>}<div className="grid gap-4 sm:grid-cols-3"><Field label="Dia"><input className="planner-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></Field><Field label="Início"><input className="planner-input" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} /></Field><Field label="Fim"><input className="planner-input" type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} /></Field></div><Field label="Repetição"><select className="planner-input" value={recurrence} onChange={(e) => setRecurrence(e.target.value as typeof recurrence)}><option value="NONE">Não repetir</option><option value="WEEKLY">Toda semana</option><option value="CUSTOM">Personalizado</option></select></Field>{recurrence === "CUSTOM" && <div className="flex flex-wrap gap-2">{[1,2,3,4,5,6,0].map((day) => <button key={day} onClick={() => setDays((old) => old.includes(day) ? old.filter((item) => item !== day) : [...old, day])} className={`size-9 rounded-full text-xs font-bold ${days.includes(day) ? "bg-black text-white" : "bg-black/[.05]"}`}>{labels[day][0]}</button>)}</div>}<div className="flex flex-wrap justify-between gap-3 border-t border-black/[.06] pt-5"><div className="flex gap-2">{current && <button onClick={() => void complete()} className="planner-button bg-[#EAF8EC] text-[#2F8F3A]"><Check className="size-4" />{current.status === "COMPLETED" ? "Reabrir" : "Concluir"}</button>}{current && <button onClick={() => void remove()} className="rounded-full bg-red-50 p-3 text-red-600"><Trash2 className="size-4" /></button>}</div><div className="flex gap-2">{!current && <button onClick={() => setStep(1)} className="rounded-full px-4 py-2 text-sm font-semibold">Voltar</button>}<button disabled={busy || !title || (kind === "STUDY" && !courseId)} onClick={() => void save()} className="planner-button bg-black text-white disabled:opacity-40">{busy ? <LoaderCircle className="size-4 animate-spin" /> : <Check className="size-4" />}Salvar</button></div></div></div>}</Modal>
 }
 
