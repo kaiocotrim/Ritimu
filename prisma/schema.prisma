@@ -53,52 +53,127 @@ enum X1BotDifficulty {
   HARD
 }
 
+enum X1QuestionDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum X1QuestionSource {
+  MANUAL
+  AI
+}
+
+enum X1QuestionReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum X1PreparationStatus {
+  SEARCHING_DATABASE
+  GENERATING_QUESTIONS
+  READY
+  FAILED
+}
+
+model KnowledgeTopic {
+  id             String       @id @default(cuid())
+  name           String
+  normalizedName String       @unique
+  slug           String       @unique
+  icon           String?
+  active         Boolean      @default(true)
+  createdById    String?
+  questions      X1Question[]
+  matches        X1Match[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([normalizedName])
+}
+
 model X1Question {
-  id            String    @id @default(cuid())
+  id            String                 @id @default(cuid())
   subject       String
   question      String
   options       Json
   correctAnswer String
   explanation   String?
-  active        Boolean   @default(true)
+  difficulty    X1QuestionDifficulty   @default(MEDIUM)
+  subtopic      String?
+  source        X1QuestionSource       @default(MANUAL)
+  reviewStatus  X1QuestionReviewStatus @default(APPROVED)
+  fingerprint   String?                @unique
+  topicId       String?
+  topic         KnowledgeTopic?        @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  active        Boolean                @default(true)
   moves         X1Move[]
-  matches       X1Match[] @relation("X1CurrentQuestion")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  reservations  X1MatchQuestion[]
+  matches       X1Match[]              @relation("X1CurrentQuestion")
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
 
   @@index([subject, active])
+  @@index([topicId, difficulty, active])
 }
 
 model X1Match {
-  id                String           @id @default(cuid())
-  code              String           @unique
-  status            X1MatchStatus    @default(WAITING)
-  playerXId         String
-  playerX           User             @relation("X1PlayerX", fields: [playerXId], references: [id], onDelete: Cascade)
-  playerOId         String?
-  playerO           User?            @relation("X1PlayerO", fields: [playerOId], references: [id], onDelete: SetNull)
-  playerXSubject    String?
-  playerOSubject    String?
-  currentTurnUserId String?
-  currentQuestionId String?
-  currentQuestion   X1Question?      @relation("X1CurrentQuestion", fields: [currentQuestionId], references: [id], onDelete: SetNull)
-  currentCell       Int?
-  turnTimeSeconds   Int?
-  allowCapture      Boolean          @default(false)
-  turnStartedAt     DateTime?
-  isBotMatch        Boolean          @default(false)
-  botDifficulty     X1BotDifficulty?
-  winnerId          String?
-  winner            User?            @relation("X1Winner", fields: [winnerId], references: [id], onDelete: SetNull)
-  board             Json
-  moves             X1Move[]
-  createdAt         DateTime         @default(now())
-  startedAt         DateTime?
-  finishedAt        DateTime?
-  updatedAt         DateTime         @updatedAt
+  id                  String               @id @default(cuid())
+  code                String               @unique
+  status              X1MatchStatus        @default(WAITING)
+  playerXId           String
+  playerX             User                 @relation("X1PlayerX", fields: [playerXId], references: [id], onDelete: Cascade)
+  playerOId           String?
+  playerO             User?                @relation("X1PlayerO", fields: [playerOId], references: [id], onDelete: SetNull)
+  playerXSubject      String?
+  playerOSubject      String?
+  topicId             String?
+  topic               KnowledgeTopic?      @relation(fields: [topicId], references: [id], onDelete: SetNull)
+  subtopic            String?
+  questionDifficulty  X1QuestionDifficulty @default(MEDIUM)
+  preparationStatus   X1PreparationStatus  @default(SEARCHING_DATABASE)
+  preparedCount       Int                  @default(0)
+  requiredCount       Int                  @default(12)
+  preparationError    String?
+  preparationLockedAt DateTime?
+  currentTurnUserId   String?
+  currentQuestionId   String?
+  currentQuestion     X1Question?          @relation("X1CurrentQuestion", fields: [currentQuestionId], references: [id], onDelete: SetNull)
+  currentCell         Int?
+  turnTimeSeconds     Int?
+  allowCapture        Boolean              @default(false)
+  turnStartedAt       DateTime?
+  isBotMatch          Boolean              @default(false)
+  botDifficulty       X1BotDifficulty?
+  winnerId            String?
+  winner              User?                @relation("X1Winner", fields: [winnerId], references: [id], onDelete: SetNull)
+  board               Json
+  moves               X1Move[]
+  reservedQuestions   X1MatchQuestion[]
+  createdAt           DateTime             @default(now())
+  startedAt           DateTime?
+  finishedAt          DateTime?
+  updatedAt           DateTime             @updatedAt
 
   @@index([playerXId, status])
   @@index([playerOId, status])
+}
+
+model X1MatchQuestion {
+  id         String     @id @default(cuid())
+  matchId    String
+  match      X1Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  questionId String
+  question   X1Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  order      Int
+  used       Boolean    @default(false)
+  usedAt     DateTime?
+  createdAt  DateTime   @default(now())
+
+  @@unique([matchId, order])
+  @@unique([matchId, questionId])
+  @@index([matchId, used, order])
 }
 
 model X1Move {

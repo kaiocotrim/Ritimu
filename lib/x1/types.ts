@@ -14,6 +14,13 @@ export type X1PublicMatch = {
   allowCapture: boolean
   isBotMatch: boolean
   botDifficulty: "EASY" | "MEDIUM" | "HARD" | null
+  topic: { id: string; name: string } | null
+  subtopic: string | null
+  questionDifficulty: "EASY" | "MEDIUM" | "HARD"
+  preparationStatus: "SEARCHING_DATABASE" | "GENERATING_QUESTIONS" | "READY" | "FAILED"
+  preparedCount: number
+  requiredCount: number
+  preparationError: string | null
   turnEndsAt: string | null
   winner: X1Player | null
   activeQuestion: { id: string; subject: string; question: string; options: string[]; cell: number } | null
