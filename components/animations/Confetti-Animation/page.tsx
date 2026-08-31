@@ -12,3 +12,4 @@ export function Confetti({ className = "h-full w-full" }: { className?: string }
     />
   )
 }
+  

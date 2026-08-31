@@ -1,13 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react"
 import Image from "next/image"
 import { createPortal } from "react-dom"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import {
   BookOpen, BriefcaseBusiness, CalendarDays, Check, ChevronLeft, ChevronRight,
   Clock3, Coffee, Dumbbell, FlaskConical, LoaderCircle, Plus, Repeat2,
-  Sparkles, Target, Trash2, X,
+  Info, Pencil, Sparkles, Target, Trash2, X,
 } from "lucide-react"
 
 import { SmoothMoonwalk } from "@/components/animations/Smooth-Moonwalk/page"
@@ -51,6 +51,7 @@ export function StudyPlanner({ initialCourses }: { initialCourses: Course[] }) {
   const [error, setError] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ event: PlanEvent | null; date: Date } | null>(null)
   const [selectedDay, setSelectedDay] = useState<Date | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ event: Occurrence; x: number; y: number } | null>(null)
   const hasLoaded = useRef(false)
 
   const range = useMemo(() => view === "WEEKLY"
@@ -75,6 +76,16 @@ export function StudyPlanner({ initialCourses }: { initialCourses: Course[] }) {
     const timeout = window.setTimeout(() => void load(), 0)
     return () => window.clearTimeout(timeout)
   }, [load])
+  useEffect(() => {
+    if (!contextMenu) return
+    const close = () => setContextMenu(null)
+    const keydown = (event: KeyboardEvent) => { if (event.key === "Escape") close() }
+    window.addEventListener("click", close)
+    window.addEventListener("scroll", close, true)
+    window.addEventListener("resize", close)
+    document.addEventListener("keydown", keydown)
+    return () => { window.removeEventListener("click", close); window.removeEventListener("scroll", close, true); window.removeEventListener("resize", close); document.removeEventListener("keydown", keydown) }
+  }, [contextMenu])
 
   const visible = useMemo(() => occurrences(events, range.from, range.to), [events, range])
   const calendarEvents = useMemo(() => calendarFilter === "ALL" ? visible : calendarFilter.startsWith("TITLE:") ? visible.filter((event) => event.title === calendarFilter.slice(6)) : visible.filter((event) => event.routineType === calendarFilter), [calendarFilter, visible])
@@ -119,6 +130,14 @@ export function StudyPlanner({ initialCourses }: { initialCourses: Course[] }) {
     }
   }
 
+  function openContextMenu(event: ReactMouseEvent, item: Occurrence) {
+    event.preventDefault()
+    event.stopPropagation()
+    window.dispatchEvent(new Event("study-plan-context-menu-open"))
+    const width = 230, height = 164, margin = 12
+    setContextMenu({ event: item, x: Math.min(event.clientX, window.innerWidth - width - margin), y: Math.min(event.clientY, window.innerHeight - height - margin) })
+  }
+
   if (configured === null && loading) return <Loading />
   if (configured === false) return <Onboarding busy={busy} onChoose={selectView} />
 
@@ -160,11 +179,12 @@ export function StudyPlanner({ initialCourses }: { initialCourses: Course[] }) {
         exit={reduceMotion ? undefined : { opacity: 0, y: -14, scale: 0.99, filter: "blur(4px)" }}
         transition={{ duration: 0.48, ease: [0.22, 1, 0.36, 1] }}
       >
-        {loading ? <Loading compact /> : view === "WEEKLY" ? <Week from={range.from} events={calendarEvents} onDay={(date) => setSelectedDay(date)} onEvent={(event) => setEditing({ event: event.source, date: event.startAt })} /> : <Month anchor={anchor} events={calendarEvents} onDay={(date) => setSelectedDay(date)} onEvent={(event) => setEditing({ event: event.source, date: event.startAt })} />}
+        {loading ? <Loading compact /> : view === "WEEKLY" ? <Week from={range.from} events={calendarEvents} onDay={(date) => setSelectedDay(date)} onEvent={(event) => setEditing({ event: event.source, date: event.startAt })} onContext={openContextMenu} /> : <Month anchor={anchor} events={calendarEvents} onDay={(date) => setSelectedDay(date)} onEvent={(event) => setEditing({ event: event.source, date: event.startAt })} onContext={openContextMenu} contextMenuOpen={Boolean(contextMenu)} />}
       </motion.div>
     </AnimatePresence>
     {selectedDay && <DayAgenda date={selectedDay} events={calendarEvents.filter((event) => sameDay(event.startAt, selectedDay))} onClose={() => setSelectedDay(null)} onAdd={() => { setSelectedDay(null); setEditing({ event: null, date: selectedDay }) }} onEvent={(event) => { setSelectedDay(null); setEditing({ event: event.source, date: event.startAt }) }} onDeleteSelected={deleteSelectedEvents} />}
     {editing && <Editor value={editing} courses={courses} busy={busy} setBusy={setBusy} setError={setError} onClose={() => setEditing(null)} onSaved={async () => { setEditing(null); await load() }} />}
+    {contextMenu && <EventContextMenu value={contextMenu} onClose={() => setContextMenu(null)} onView={() => { setSelectedDay(contextMenu.event.startAt); setContextMenu(null) }} onEdit={() => { setEditing({ event: contextMenu.event.source, date: contextMenu.event.startAt }); setContextMenu(null) }} onDelete={() => { const id = contextMenu.event.id; setContextMenu(null); void deleteSelectedEvents([id]) }} />}
   </motion.div>
 }
 
@@ -179,7 +199,7 @@ function occurrences(events: PlanEvent[], from: Date, to: Date) {
   return result.sort((a, b) => a.startAt.getTime() - b.startAt.getTime())
 }
 
-function Week({ from, events, onDay, onEvent }: { from: Date; events: Occurrence[]; onDay: (date: Date) => void; onEvent: (event: Occurrence) => void }) {
+function Week({ from, events, onDay, onEvent, onContext }: { from: Date; events: Occurrence[]; onDay: (date: Date) => void; onEvent: (event: Occurrence) => void; onContext: (mouseEvent: ReactMouseEvent, event: Occurrence) => void }) {
   return <section className="overflow-x-auto rounded-[28px] bg-white ring-1 ring-black/[.04]">
     <div className="grid min-w-[860px] grid-cols-7 divide-x divide-black/[.06]">
       {Array.from({ length: 7 }, (_, index) => {
@@ -187,7 +207,7 @@ function Week({ from, events, onDay, onEvent }: { from: Date; events: Occurrence
         return <div key={dateKey(date)} className="min-h-[430px] p-3">
           <button onClick={() => onDay(date)} className={`mb-4 w-full rounded-2xl py-3 text-center ${sameDay(date, new Date()) ? "bg-black text-white" : "hover:bg-black/[.03]"}`}><span className="block text-[10px] font-bold tracking-widest opacity-45">{labels[date.getDay()]}</span><span className="mt-1 block text-xl font-bold">{date.getDate()}</span></button>
           <div className="space-y-2">
-            <AnimatePresence initial={false}>{items.map((event) => <EventCard key={`${event.id}-${event.startAt.toISOString()}`} event={event} onClick={() => onEvent(event)} />)}</AnimatePresence>
+            <AnimatePresence initial={false}>{items.map((event) => <EventCard key={`${event.id}-${event.startAt.toISOString()}`} event={event} onClick={() => onEvent(event)} onContextMenu={(mouseEvent) => onContext(mouseEvent, event)} />)}</AnimatePresence>
             <button onClick={() => onDay(date)} className="flex w-full items-center justify-center gap-1 rounded-xl border border-dashed border-black/10 py-3 text-xs text-black/30 hover:text-black/60"><Plus className="size-3" /> adicionar</button>
           </div>
         </div>
@@ -230,7 +250,7 @@ function DayAgenda({ date, events, onClose, onAdd, onEvent, onDeleteSelected }: 
   </Modal>
 }
 
-function Month({ anchor, events, onDay, onEvent }: { anchor: Date; events: Occurrence[]; onDay: (date: Date) => void; onEvent: (event: Occurrence) => void }) {
+function Month({ anchor, events, onDay, onEvent, onContext, contextMenuOpen }: { anchor: Date; events: Occurrence[]; onDay: (date: Date) => void; onEvent: (event: Occurrence) => void; onContext: (mouseEvent: ReactMouseEvent, event: Occurrence) => void; contextMenuOpen: boolean }) {
   const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1), grid = weekStart(first)
   return <section className="overflow-x-auto rounded-[28px] bg-white p-3 ring-1 ring-black/[.04]">
     <div className="grid min-w-[760px] grid-cols-7">
@@ -239,18 +259,25 @@ function Month({ anchor, events, onDay, onEvent }: { anchor: Date; events: Occur
         const date = addDays(grid, index), items = events.filter((event) => sameDay(event.startAt, date))
         return <button key={dateKey(date)} onClick={() => onDay(date)} className={`group min-h-28 border-l border-t border-black/[.05] p-2 text-left transition-all duration-200 hover:z-[2] hover:bg-white/[.07] hover:shadow-[inset_0_0_0_1px_rgba(80,208,92,0.28),0_8px_24px_rgba(0,0,0,0.18)] ${date.getMonth() !== anchor.getMonth() ? "opacity-35 hover:opacity-60" : ""}`}>
           <span className={`inline-grid size-7 place-items-center rounded-full text-xs font-bold transition-colors duration-200 ${sameDay(date, new Date()) ? "bg-black text-white" : "group-hover:text-[#50D05C]"}`}>{date.getDate()}</span>
-          <div className="mt-1 space-y-1"><AnimatePresence initial={false}>{items.slice(0, 3).map((event) => <CalendarEventPill key={`${event.id}-${event.startAt.toISOString()}`} event={event} onClick={() => onEvent(event)} />)}</AnimatePresence>{items.length > 3 && <span className="block px-1 text-[10px] text-black/40">+{items.length - 3} eventos</span>}</div>
+          <div className="mt-1 space-y-1"><AnimatePresence initial={false}>{items.slice(0, 3).map((event) => <CalendarEventPill key={`${event.id}-${event.startAt.toISOString()}`} event={event} onClick={() => onEvent(event)} onContextMenu={(mouseEvent) => onContext(mouseEvent, event)} contextMenuOpen={contextMenuOpen} />)}</AnimatePresence>{items.length > 3 && <span className="block px-1 text-[10px] text-black/40">+{items.length - 3} eventos</span>}</div>
         </button>
       })}
     </div>
   </section>
 }
 
-function CalendarEventPill({ event, onClick }: { event: Occurrence; onClick: () => void }) {
+function CalendarEventPill({ event, onClick, onContextMenu, contextMenuOpen }: { event: Occurrence; onClick: () => void; onContextMenu: (event: ReactMouseEvent) => void; contextMenuOpen: boolean }) {
   const item = meta(event.routineType)
   const [preview, setPreview] = useState<{ left: number; top: number; below: boolean } | null>(null)
 
+  useEffect(() => {
+    const closePreview = () => setPreview(null)
+    window.addEventListener("study-plan-context-menu-open", closePreview)
+    return () => window.removeEventListener("study-plan-context-menu-open", closePreview)
+  }, [])
+
   function showPreview(target: HTMLElement) {
+    if (contextMenuOpen) return
     const bounds = target.getBoundingClientRect()
     setPreview({
       left: Math.min(Math.max(bounds.left + bounds.width / 2, 112), window.innerWidth - 112),
@@ -260,8 +287,8 @@ function CalendarEventPill({ event, onClick }: { event: Occurrence; onClick: () 
   }
 
   return <motion.span layout initial={{ opacity: 0, scale: 0.86, y: 5 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.82, y: -4 }} transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }} className="relative block" onMouseLeave={() => setPreview(null)}>
-    <span onMouseEnter={(mouseEvent) => showPreview(mouseEvent.currentTarget)} onClick={(mouseEvent) => { mouseEvent.stopPropagation(); onClick() }} className={`block truncate rounded-lg px-2 py-1 text-[10px] font-semibold ${item.color}`}>{event.title}</span>
-    {preview && createPortal(
+    <span onMouseEnter={(mouseEvent) => showPreview(mouseEvent.currentTarget)} onClick={(mouseEvent) => { mouseEvent.stopPropagation(); onClick() }} onContextMenu={(mouseEvent) => { setPreview(null); onContextMenu(mouseEvent) }} className={`block cursor-context-menu truncate rounded-lg px-2 py-1 text-[10px] font-semibold ${item.color}`}>{event.title}</span>
+    {preview && !contextMenuOpen && createPortal(
       <motion.span
         className="pointer-events-none fixed z-[120] w-52 rounded-2xl border border-white/10 bg-[#202126]/95 p-3 text-left text-white shadow-[0_14px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl"
         style={{ left: preview.left, top: preview.top, transform: `translate(-50%, ${preview.below ? "0" : "-100%"})` }}
@@ -277,7 +304,22 @@ function CalendarEventPill({ event, onClick }: { event: Occurrence; onClick: () 
   </motion.span>
 }
 
-function EventCard({ event, onClick }: { event: Occurrence; onClick: () => void }) { const item = meta(event.routineType), Icon = item.icon; return <motion.button layout initial={{ opacity: 0, scale: 0.88, y: 7 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.82, y: -6 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} onClick={onClick} className={`w-full rounded-xl p-2.5 text-left transition hover:-translate-y-0.5 ${item.color} ${event.status === "COMPLETED" ? "opacity-45" : ""}`}><span className="flex items-center gap-1.5"><Icon className="size-3.5" /><strong className="truncate text-xs">{event.title}</strong></span><span className="mt-1 block text-[10px] opacity-65">{clock(event.startAt)} – {clock(event.endAt)}</span>{event.status === "COMPLETED" && <span className="mt-1 flex items-center gap-1 text-[9px] font-bold uppercase"><Check className="size-2.5" /> concluído</span>}</motion.button> }
+function EventCard({ event, onClick, onContextMenu }: { event: Occurrence; onClick: () => void; onContextMenu: (event: ReactMouseEvent) => void }) { const item = meta(event.routineType), Icon = item.icon; return <motion.button layout initial={{ opacity: 0, scale: 0.88, y: 7 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.82, y: -6 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} onClick={onClick} onContextMenu={onContextMenu} className={`w-full cursor-context-menu rounded-xl p-2.5 text-left transition hover:-translate-y-0.5 ${item.color} ${event.status === "COMPLETED" ? "opacity-45" : ""}`}><span className="flex items-center gap-1.5"><Icon className="size-3.5" /><strong className="truncate text-xs">{event.title}</strong></span><span className="mt-1 block text-[10px] opacity-65">{clock(event.startAt)} – {clock(event.endAt)}</span>{event.status === "COMPLETED" && <span className="mt-1 flex items-center gap-1 text-[9px] font-bold uppercase"><Check className="size-2.5" /> concluído</span>}</motion.button> }
+
+function EventContextMenu({ value, onClose, onView, onEdit, onDelete }: { value: { event: Occurrence; x: number; y: number }; onClose: () => void; onView: () => void; onEdit: () => void; onDelete: () => void }) {
+  return createPortal(<motion.div role="menu" aria-label={`Ações para ${value.event.title}`} initial={{ opacity: 0, scale: .94, y: -5 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .96 }} transition={{ duration: .16, ease: [0.22, 1, 0.36, 1] }} onClick={(event) => event.stopPropagation()} onContextMenu={(event) => event.preventDefault()} className="fixed z-[150] w-[230px] overflow-hidden rounded-xl border border-white/10 bg-[#202126]/95 p-1.5 text-white shadow-[0_18px_55px_rgba(0,0,0,.48)] backdrop-blur-xl" style={{ left: value.x, top: value.y }}>
+    <div className="border-b border-white/[.08] px-3 py-2.5"><p className="truncate text-xs font-bold">{value.event.title}</p><p className="mt-0.5 text-[10px] text-white/40">{clock(value.event.startAt)} – {clock(value.event.endAt)}</p></div>
+    <ContextAction icon={Info} label="Visualizar informações" onClick={onView} />
+    <ContextAction icon={Pencil} label="Editar evento" onClick={onEdit} />
+    <div className="my-1 h-px bg-white/[.08]" />
+    <ContextAction icon={Trash2} label="Excluir evento" danger onClick={onDelete} />
+    <button type="button" className="sr-only" onClick={onClose}>Fechar menu</button>
+  </motion.div>, document.body)
+}
+
+function ContextAction({ icon: Icon, label, danger = false, onClick }: { icon: typeof Info; label: string; danger?: boolean; onClick: () => void }) {
+  return <motion.button type="button" role="menuitem" onClick={onClick} whileHover={{ x: 2 }} whileTap={{ scale: .98 }} className={`flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-left text-xs font-semibold transition ${danger ? "text-red-300 hover:bg-red-500/15" : "text-white/80 hover:bg-white/[.08] hover:text-white"}`}><Icon className="size-4 shrink-0 opacity-70" />{label}</motion.button>
+}
 
 function confirmDelete(count = 1) {
   return new Promise<boolean>((resolve) => {
