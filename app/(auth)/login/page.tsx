@@ -24,8 +24,24 @@ export default function Login() {
   const [remember, setRemember] = useState(true), [showPass, setShowPass] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
   const [loading, setLoading] = useState(false), [error, setError] = useState("")
+  const [checkingSession, setCheckingSession] = useState(true)
   const [loginSucceeded, setLoginSucceeded] = useState(false)
   const [galleryOpen, setGalleryOpen] = useState(false), [slide, setSlide] = useState(0)
+
+  useEffect(() => {
+    let active = true
+    void authClient.getSession().then(({ data }) => {
+      if (!active) return
+      if (data?.session) {
+        router.replace("/dashboard")
+        return
+      }
+      setCheckingSession(false)
+    }).catch(() => {
+      if (active) setCheckingSession(false)
+    })
+    return () => { active = false }
+  }, [router])
 
   useEffect(() => {
     if (!galleryOpen) return
@@ -40,7 +56,7 @@ export default function Login() {
   async function login(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setLoading(true); setError("")
     try {
-      const result = await authClient.signIn.email({ email, password })
+      const result = await authClient.signIn.email({ email, password, rememberMe: remember })
       if (result.error) return setError("E-mail ou senha inválidos.")
       setLoginSucceeded(true)
       window.requestAnimationFrame(() => {
@@ -51,11 +67,14 @@ export default function Login() {
         void audio.play().catch(() => undefined)
       })
       await new Promise((resolve) => window.setTimeout(resolve, reduceMotion ? 500 : 2800))
-      router.push("/dashboard")
+      router.replace("/dashboard")
+      router.refresh()
     }
     catch { setError("Não foi possível entrar. Tente novamente.") }
     finally { setLoading(false) }
   }
+
+  if (checkingSession) return <main className="grid min-h-screen place-items-center bg-white text-[#111827]" aria-live="polite"><div className="flex items-center gap-3 text-sm font-medium text-black/50"><LoaderCircle className="size-5 animate-spin text-[#1887f2]" />Verificando sua sessão...</div></main>
 
   return <main className="relative min-h-screen overflow-x-hidden bg-white text-[#111827]">
     <audio ref={successAudioRef} src="/sounds/login-success.mp3" preload="auto" />
