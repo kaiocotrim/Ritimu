@@ -12,7 +12,7 @@ export class GoogleCalendarError extends Error {
   }
 }
 
-type GoogleAccount = { id: string; accessToken: string | null; refreshToken: string | null; accessTokenExpiresAt: Date | null; scope: string | null }
+type GoogleAccount = { id: string; accessToken: string | null; refreshToken: string | null; accessTokenExpiresAt: Date | null; scope: string | null; idToken: string | null }
 type GoogleEventDate = { date?: string; dateTime?: string; timeZone?: string }
 export type GoogleCalendarEvent = { id?: string; status?: string; summary?: string; description?: string; updated?: string; start?: GoogleEventDate; end?: GoogleEventDate }
 
@@ -23,9 +23,20 @@ function hasCalendarScope(scope: string | null) {
 export async function getGoogleCalendarConnection(userId: string) {
   const account = await prisma.account.findFirst({
     where: { userId, providerId: "google" },
-    select: { id: true, accessToken: true, refreshToken: true, accessTokenExpiresAt: true, scope: true },
+    select: { id: true, accessToken: true, refreshToken: true, accessTokenExpiresAt: true, scope: true, idToken: true },
+    orderBy: { updatedAt: "desc" },
   })
-  return { account, connected: Boolean(account && hasCalendarScope(account.scope)), hasRefreshToken: Boolean(account?.refreshToken) }
+  return { account, connected: Boolean(account && hasCalendarScope(account.scope)), hasRefreshToken: Boolean(account?.refreshToken), email: googleEmail(account?.idToken) }
+}
+
+function googleEmail(idToken?: string | null) {
+  if (!idToken) return null
+  try {
+    const payload = JSON.parse(Buffer.from(idToken.split(".")[1], "base64url").toString("utf8")) as { email?: unknown }
+    return typeof payload.email === "string" ? payload.email : null
+  } catch {
+    return null
+  }
 }
 
 async function refreshGoogleToken(account: GoogleAccount) {
