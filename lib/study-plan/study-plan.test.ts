@@ -2,11 +2,25 @@ import { describe, expect, it } from "vitest"
 import { calculatePriority } from "./calculate-priority"
 import { scheduleSessions } from "./schedule-sessions"
 import { generateStudyPlanPreview } from "./generate-preview"
+import { getDayCompletionStatus } from "./day-status"
 import type { StudyTask } from "./types"
 
 const now = new Date("2026-08-24T12:00:00-03:00")
 const base: StudyTask = { id: "1", title: "Atividade", subjectId: "a", subjectName: "Matemática", difficulty: 3, importance: 3, estimatedMinutes: 40, completed: false }
 const task = (values: Partial<StudyTask>): StudyTask => ({ ...base, ...values })
+
+describe("resultado diário", () => {
+  const past = new Date("2026-08-31T12:00:00-03:00")
+  const today = new Date("2026-09-01T12:00:00-03:00")
+
+  it("fica verde quando todas as atividades foram concluídas", () => expect(getDayCompletionStatus(past, [{ status: "COMPLETED" }, { status: "COMPLETED" }], today)).toBe("PERFECT"))
+  it("fica amarelo quando um dia passado foi parcialmente concluído", () => expect(getDayCompletionStatus(past, [{ status: "COMPLETED" }, { status: "PENDING" }], today)).toBe("PARTIAL"))
+  it("fica vermelho quando nada foi concluído em um dia passado", () => expect(getDayCompletionStatus(past, [{ status: "PENDING" }, { status: "PENDING" }], today)).toBe("MISSED"))
+  it("mantém dias atuais, futuros e vazios neutros", () => {
+    expect(getDayCompletionStatus(today, [{ status: "PENDING" }], today)).toBe("NEUTRAL")
+    expect(getDayCompletionStatus(past, [], today)).toBe("NEUTRAL")
+  })
+})
 
 describe("prioridade do plano", () => {
   it("dá maior prioridade a atividade atrasada", () => expect(calculatePriority(task({ dueAt: new Date("2026-08-20") }), now).score).toBeGreaterThan(calculatePriority(task({ dueAt: new Date("2026-08-30") }), now).score))

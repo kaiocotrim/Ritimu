@@ -134,7 +134,7 @@ export default async function DisciplinasPage({
   )
 
   return (
-    <main className="min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-10 text-[#111111] sm:px-8 sm:pt-12 lg:px-16 lg:pt-14">
+    <main className="theme-page min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-10 text-[#111111] sm:px-8 sm:pt-12 lg:px-16 lg:pt-14">
       <div className="mx-auto max-w-[1120px]">
         {/* Header */}
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">

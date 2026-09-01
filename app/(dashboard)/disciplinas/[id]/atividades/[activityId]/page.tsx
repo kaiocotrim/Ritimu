@@ -67,7 +67,7 @@ export default async function AtividadePage({
   const dueAt = formatDueDate(assignment)
 
   return (
-    <main className="min-h-screen bg-[#F6F5F1] px-4 pb-16 pt-8 text-[#111111] sm:px-8 lg:px-16">
+    <main className="theme-page min-h-screen bg-[#F6F5F1] px-4 pb-16 pt-8 text-[#111111] sm:px-8 lg:px-16">
       <div className="mx-auto w-full max-w-4xl">
         <Link
           href={`/disciplinas/${course.id}`}

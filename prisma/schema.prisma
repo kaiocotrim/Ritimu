@@ -150,6 +150,10 @@ model X1Match {
   captureLimit        Int                  @default(3)
   capturesX           Int                  @default(0)
   capturesO           Int                  @default(0)
+  totalRounds         Int                  @default(1)
+  currentRound        Int                  @default(1)
+  roundWinsX          Int                  @default(0)
+  roundWinsO          Int                  @default(0)
   turnStartedAt       DateTime?
   isBotMatch          Boolean              @default(false)
   botDifficulty       X1BotDifficulty?
@@ -195,6 +199,7 @@ model X1Move {
   question       X1Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
   selectedAnswer String
   correct        Boolean
+  round          Int        @default(1)
   createdAt      DateTime   @default(now())
 
   @@index([matchId, createdAt])
@@ -333,18 +338,21 @@ enum CalendarSyncStatus {
 }
 
 model StudyPreference {
-  id                    String               @id @default(cuid())
-  userId                String               @unique
-  user                  User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  defaultSessionMinutes Int                  @default(40)
-  breakMinutes          Int                  @default(10)
-  maxDailyMinutes       Int                  @default(120)
-  studyOnWeekends       Boolean              @default(false)
-  timeZone              String               @default("America/Sao_Paulo")
-  syncWithGoogleDefault Boolean              @default(false)
-  plannerView           StudyPlanPeriodType?
-  createdAt             DateTime             @default(now())
-  updatedAt             DateTime             @updatedAt
+  id                     String               @id @default(cuid())
+  userId                 String               @unique
+  user                   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  defaultSessionMinutes  Int                  @default(40)
+  breakMinutes           Int                  @default(10)
+  maxDailyMinutes        Int                  @default(120)
+  studyOnWeekends        Boolean              @default(false)
+  timeZone               String               @default("America/Sao_Paulo")
+  syncWithGoogleDefault  Boolean              @default(false)
+  plannerView            StudyPlanPeriodType?
+  plannerTheme           String               @default("SPACE")
+  missionsBackgroundMode String               @default("DEFAULT")
+  missionsBackgroundUrl  String?
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
 }
 
 model CalendarEventDayCompletion {
@@ -492,6 +500,7 @@ model CalendarEvent {
   source                CalendarEventSource          @default(RITIMU)
   type                  CalendarEventType            @default(STUDY)
   status                CalendarEventStatus          @default(PENDING)
+  paid                  Boolean                      @default(false)
   routineType           String                       @default("OTHER")
   recurrence            String                       @default("NONE")
   recurrenceDays        Int[]                        @default([])
@@ -646,9 +655,9 @@ model CodeBattle {
 }
 
 model CodeBattleQuestion {
-  id            String             @id @default(cuid())
+  id            String               @id @default(cuid())
   battleId      String
-  battle        CodeBattle         @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  battle        CodeBattle           @relation(fields: [battleId], references: [id], onDelete: Cascade)
   position      Int
   statement     String
   options       Json

@@ -17,7 +17,15 @@ import { getGamificationSummary } from "@/lib/gamification"
 import { getTodayCalendarEvents } from "@/lib/study-plan/today"
 
 
-const weekLabels = ["S", "T", "Q", "Q", "S", "S", "D"]
+const weekDays = [
+  { label: "S", activityIndex: 1 },
+  { label: "T", activityIndex: 2 },
+  { label: "Q", activityIndex: 3 },
+  { label: "Q", activityIndex: 4 },
+  { label: "S", activityIndex: 5 },
+  { label: "S", activityIndex: 6 },
+  { label: "D", activityIndex: 0 },
+]
 
 export default async function Dashboard() {
   const session = await auth.api.getSession({
@@ -58,9 +66,9 @@ export default async function Dashboard() {
     subtitle: event.studySession?.subjectName ?? eventTypeLabels[event.type],
     accent: index % 2 === 0 ? "purple" as const : "blue" as const,
   }))
-  const week = weekLabels.map((label, index) => ({
+  const week = weekDays.map(({ label, activityIndex }) => ({
     label,
-    done: gamification.weekActivity[index],
+    done: gamification.weekActivity[activityIndex],
   }))
 
 

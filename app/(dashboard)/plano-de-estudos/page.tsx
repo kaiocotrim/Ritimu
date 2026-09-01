@@ -43,8 +43,8 @@ export default async function StudyPlanPage() {
       </div>
       <div className="study-plan-content relative z-10">
         <div className="fixed right-4 top-4 z-50 sm:right-8 sm:top-7"><GoogleCalendarConnect connected={google.connected} connectedEmail={google.email} /></div>
-        <StudyPlanner initialCourses={courses} />
-        <Sidebar />
+        <StudyPlanner initialCourses={courses} theme="SPACE" />
+        <Sidebar variant="dark" />
       </div>
     </main>
   )

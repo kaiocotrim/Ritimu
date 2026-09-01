@@ -2,22 +2,21 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, Brain, Flag, Gamepad2, Home, Swords, Trophy, User } from "lucide-react"
+import { BookOpen, Brain, Flag, Gamepad2, Home, Trophy, User } from "lucide-react"
 
 const navigationItems = [
   { href: "/dashboard", label: "Início", Icon: Home },
   { href: "/disciplinas", label: "Matérias", Icon: BookOpen },
   { href: "/metas", label: "Missões", Icon: Flag },
   { href: "/plano-de-estudos", label: "Meu plano", Icon: Brain },
-  { href: "/code-battle", label: "Code", Icon: Swords },
   { href: "/ranking", label: "Ranking", Icon: Trophy },
   { href: "/x1", label: "X1", Icon: Gamepad2 },
   { href: "/perfil", label: "Perfil", Icon: User },
 ]
 
-export function Sidebar() {
+export function Sidebar({ variant }: { variant?: "light" | "dark" }) {
   const pathname = usePathname()
-  const isDarkPage = pathname === "/plano-de-estudos" || pathname.startsWith("/plano-de-estudos/")
+  const isDarkPage = variant ? variant === "dark" : pathname === "/plano-de-estudos" || pathname.startsWith("/plano-de-estudos/")
 
   return (
     <nav

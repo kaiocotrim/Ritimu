@@ -38,3 +38,30 @@ export async function PUT(request: Request) {
   })
   return Response.json({ success: true })
 }
+
+export async function PATCH(request: Request) {
+  const userId = await getStudyPlanUserId()
+  if (!userId) return Response.json({ error: "Não autenticado" }, { status: 401 })
+  const body = await request.json().catch(() => null) as { plannerTheme?: unknown; missionsBackgroundMode?: unknown; missionsBackgroundUrl?: unknown } | null
+  if (body?.missionsBackgroundMode !== undefined) {
+    const mode = body.missionsBackgroundMode === "DEFAULT" ? "DEFAULT" : body.missionsBackgroundMode === "IMAGE" ? "IMAGE" : null
+    if (!mode) return Response.json({ error: "Opção de fundo inválida." }, { status: 400 })
+    let url: string | null = null
+    if (mode === "IMAGE") {
+      if (typeof body.missionsBackgroundUrl !== "string" || body.missionsBackgroundUrl.length > 2048) return Response.json({ error: "Informe uma URL de imagem válida." }, { status: 400 })
+      try {
+        const parsedUrl = new URL(body.missionsBackgroundUrl)
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") throw new Error("invalid protocol")
+        url = parsedUrl.toString()
+      } catch {
+        return Response.json({ error: "Informe uma URL iniciada com http:// ou https://." }, { status: 400 })
+      }
+    }
+    await prisma.studyPreference.upsert({ where: { userId }, create: { userId, missionsBackgroundMode: mode, missionsBackgroundUrl: url }, update: { missionsBackgroundMode: mode, missionsBackgroundUrl: url } })
+    return Response.json({ success: true, missionsBackgroundMode: mode, missionsBackgroundUrl: url })
+  }
+  const plannerTheme = body?.plannerTheme === "LIGHT" ? "LIGHT" : body?.plannerTheme === "SPACE" ? "SPACE" : null
+  if (!plannerTheme) return Response.json({ error: "Tema inválido." }, { status: 400 })
+  await prisma.studyPreference.upsert({ where: { userId }, create: { userId, plannerTheme }, update: { plannerTheme } })
+  return Response.json({ success: true, plannerTheme })
+}

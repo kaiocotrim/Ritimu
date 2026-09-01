@@ -34,7 +34,13 @@ export async function GET(request: Request) {
         startAt: { lt: to },
         OR: [{ startAt: { gte: from } }, { recurrence: { not: "NONE" } }],
       },
-      include: { studySession: { select: { courseId: true, subjectName: true } } },
+      include: {
+        studySession: { select: { courseId: true, subjectName: true } },
+        dayCompletions: {
+          where: { occurrenceDate: { gte: from, lt: to } },
+          select: { occurrenceDate: true },
+        },
+      },
       orderBy: { startAt: "asc" },
     }),
   ])

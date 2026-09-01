@@ -15,6 +15,10 @@ export type X1PublicMatch = {
   captureLimit: number
   capturesX: number
   capturesO: number
+  totalRounds: number
+  currentRound: number
+  roundWinsX: number
+  roundWinsO: number
   isBotMatch: boolean
   botDifficulty: "EASY" | "MEDIUM" | "HARD" | null
   topic: { id: string; name: string } | null
@@ -27,7 +31,7 @@ export type X1PublicMatch = {
   turnEndsAt: string | null
   winner: X1Player | null
   activeQuestion: { id: string; subject: string; question: string; options: string[]; cell: number } | null
-  moves: { playerId: string | null; correct: boolean; isBot: boolean }[]
+  moves: { playerId: string | null; correct: boolean; isBot: boolean; round: number }[]
   startedAt: string | null
   finishedAt: string | null
 }

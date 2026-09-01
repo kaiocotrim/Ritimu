@@ -5,7 +5,6 @@ import {
   Calendar,
   CheckCircle2,
   Circle,
-  Flame,
   Sparkles,
   Target,
   Trophy,
@@ -16,7 +15,9 @@ import { auth } from "@/lib/auth"
 import { getGamificationSummary } from "@/lib/gamification"
 import { getMissionProgress, syncMissionRewards } from "@/lib/missions"
 import { AnimatedCard, AnimatedItem } from "@/components/dashboard/animated-card"
+import { FireIcon } from "@/components/animations/fire/page"
 import { Sidebar } from "@/components/sidebar/sidebar"
+import { prisma } from "@/lib/prisma"
 
 type Mission = {
   id: string
@@ -120,7 +121,13 @@ export default async function MissoesPage({
     redirect("/login")
   }
 
-  const progressById = await getMissionProgress(session.user.id)
+  const [progressById, backgroundPreference] = await Promise.all([
+    getMissionProgress(session.user.id),
+    prisma.studyPreference.findUnique({
+      where: { userId: session.user.id },
+      select: { missionsBackgroundMode: true, missionsBackgroundUrl: true },
+    }),
+  ])
   await syncMissionRewards(session.user.id, progressById)
   const gamification = await getGamificationSummary(session.user.id)
   const missions = missionDefinitions.map((mission) => ({
@@ -142,8 +149,13 @@ export default async function MissoesPage({
 
   const completedCount = missions.filter((mission) => mission.completed).length
 
+  const customBackgroundUrl = backgroundPreference?.missionsBackgroundMode === "IMAGE" ? backgroundPreference.missionsBackgroundUrl : null
+
   return (
-    <main className="min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-8 text-[#111111] sm:px-8 lg:px-16">
+    <main
+      className={`min-h-screen px-4 pb-32 pt-8 text-[#111111] sm:px-8 lg:px-16 ${customBackgroundUrl ? "bg-cover bg-center bg-fixed" : "bg-[#F6F5F1]"}`}
+      style={customBackgroundUrl ? { backgroundImage: `linear-gradient(rgb(246 245 241 / 82%), rgb(246 245 241 / 82%)), url(${JSON.stringify(customBackgroundUrl)})` } : undefined}
+    >
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-6">
@@ -203,10 +215,7 @@ export default async function MissoesPage({
             </div>
 
             <div className="flex items-center gap-3">
-              <Flame
-                className="size-9 shrink-0 fill-orange-500 text-orange-500"
-                aria-hidden="true"
-              />
+              <FireIcon className="size-25 shrink-0 fill-orange-500 text-orange-500" />
               <div>
                 <p className="text-sm text-white/50">Sequência</p>
                 <p className="text-2xl font-bold">

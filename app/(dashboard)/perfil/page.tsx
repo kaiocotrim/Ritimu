@@ -19,6 +19,8 @@ import {
 import { LogoutButton } from "@/components/auth/logout-button"
 import { AnimatedCard, AnimatedItem } from "@/components/dashboard/animated-card"
 import { Sidebar } from "@/components/sidebar/sidebar"
+import { StudyPlanThemePreference } from "@/components/profile/study-plan-theme-preference"
+import { MissionsBackgroundPreference } from "@/components/profile/missions-background-preference"
 import { auth } from "@/lib/auth"
 import { getGamificationSummary } from "@/lib/gamification"
 import { prisma } from "@/lib/prisma"
@@ -38,7 +40,7 @@ export default async function PerfilPage() {
     redirect("/login")
   }
 
-  const [coursesCount, completedItems, user, gamification, xpByUser] = await Promise.all([
+  const [coursesCount, completedItems, user, gamification, xpByUser, studyPreference] = await Promise.all([
     prisma.classroomCourse.count({ where: { userId: session.user.id } }),
     prisma.classroomItemCompletion.count({
       where: { userId: session.user.id, completed: true },
@@ -54,6 +56,7 @@ export default async function PerfilPage() {
         xpTransactions: { select: { amount: true } },
       },
     }),
+    prisma.studyPreference.findUnique({ where: { userId: session.user.id }, select: { plannerTheme: true, missionsBackgroundMode: true, missionsBackgroundUrl: true } }),
   ])
 
   const orderedUsers = xpByUser
@@ -82,7 +85,7 @@ export default async function PerfilPage() {
   }).format(user?.createdAt ?? new Date())
 
   return (
-    <main className="min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-8 text-[#111111] sm:px-8 lg:px-16">
+    <main className="theme-page min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-8 text-[#111111] sm:px-8 lg:px-16">
       <div className="mx-auto max-w-6xl">
         <header className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Perfil</h1>
@@ -199,6 +202,11 @@ export default async function PerfilPage() {
                 <span className="flex-1 font-medium">Conta protegida</span>
                 <span className="text-sm text-black/40">Verificada</span>
               </div>
+              <StudyPlanThemePreference initialTheme={studyPreference?.plannerTheme === "LIGHT" ? "LIGHT" : "SPACE"} />
+              <MissionsBackgroundPreference
+                initialMode={studyPreference?.missionsBackgroundMode === "IMAGE" ? "IMAGE" : "DEFAULT"}
+                initialUrl={studyPreference?.missionsBackgroundUrl ?? ""}
+              />
             </div>
 
             <div className="mt-4 flex justify-end">

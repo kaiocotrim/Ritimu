@@ -82,7 +82,7 @@ export async function getWeekScheduleSummary(userId: string, now = new Date()) {
       getCalendarEventsForDay(userId, new Date(weekStart.getTime() + index * DAY_IN_MS)),
     ),
   )
-  const weekActivity = days.map((events) => events.length > 0 && events.every((event) => event.occurrenceCompleted))
+  const weekActivity = days.map((events) => events.some((event) => event.occurrenceCompleted))
   const todayIndex = weekday(today)
   let cursor = weekActivity[todayIndex] ? todayIndex : todayIndex - 1
   let streak = 0
@@ -96,7 +96,7 @@ export async function getWeekScheduleSummary(userId: string, now = new Date()) {
     let previousDay = new Date(weekStart.getTime() - DAY_IN_MS)
     for (let checkedDays = 0; checkedDays < 365; checkedDays += 1) {
       const events = await getCalendarEventsForDay(userId, previousDay)
-      if (events.length === 0 || events.some((event) => !event.occurrenceCompleted)) break
+      if (!events.some((event) => event.occurrenceCompleted)) break
       streak += 1
       previousDay = new Date(previousDay.getTime() - DAY_IN_MS)
     }

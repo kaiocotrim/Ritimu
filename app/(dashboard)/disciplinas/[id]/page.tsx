@@ -200,7 +200,7 @@ export default async function DisciplinaPage({
     totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0
 
   return (
-    <main className="min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-8 text-[#111111] sm:px-8 lg:px-16">
+    <main className="theme-page min-h-screen bg-[#F6F5F1] px-4 pb-32 pt-8 text-[#111111] sm:px-8 lg:px-16">
       <div className="mx-auto max-w-5xl">
         <Link
           href="/disciplinas"

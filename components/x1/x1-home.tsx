@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import { Bot, Check, Clock3, Copy, DoorOpen, Plus, RefreshCcw, ShieldCheck, Swords, Trophy, UsersRound } from "lucide-react"
+import { Bot, Check, Clock3, Copy, DoorOpen, Layers3, Plus, RefreshCcw, ShieldCheck, Swords, Trophy, UsersRound } from "lucide-react"
 import { normalizeRoomCode } from "@/lib/x1/room-code"
 import { TopicCombobox, type TopicOption } from "@/components/x1/topic-combobox"
 
@@ -16,6 +16,7 @@ export function X1Home() {
   const [mode, setMode] = useState<"CREATE" | "JOIN">("CREATE")
   const [busy, setBusy] = useState(false), [error, setError] = useState("")
   const [turnTimeSeconds, setTurnTimeSeconds] = useState<number | null>(30), [allowCapture, setAllowCapture] = useState(false), [captureLimit, setCaptureLimit] = useState(3), [vsBot, setVsBot] = useState(false)
+  const [totalRounds, setTotalRounds] = useState(3)
   const [botDifficulty, setBotDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">("MEDIUM"), [difficulty, setDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">("MEDIUM")
   const [topic, setTopic] = useState<TopicOption | null>(null), [subtopic, setSubtopic] = useState("ALL")
 
@@ -23,7 +24,7 @@ export function X1Home() {
     setError("")
     if (!topic) { setError("Escolha ou crie um tema antes de continuar."); return }
     setBusy(true)
-    const response = await fetch("/api/x1/rooms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turnTimeSeconds, allowCapture, captureLimit, vsBot, botDifficulty, difficulty, topicId: topic.id, subtopic }) })
+    const response = await fetch("/api/x1/rooms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ turnTimeSeconds, allowCapture, captureLimit, totalRounds, vsBot, botDifficulty, difficulty, topicId: topic.id, subtopic }) })
     const body: { code?: string; error?: string } = await response.json()
     setBusy(false)
     if (!response.ok || !body.code) return setError(body.error ?? "Não foi possível criar a sala.")
@@ -67,6 +68,7 @@ export function X1Home() {
           <p className="mb-2 mt-3 text-[10px] font-bold text-black/35">Sugestões populares</p><div className="flex flex-wrap gap-1.5">{popularTopics.map((name) => <motion.button whileTap={reduceMotion ? undefined : { scale: .96 }} type="button" key={name} onClick={() => void selectPopular(name)} className="cursor-pointer rounded-full border border-black/[.08] px-3 py-1.5 text-[10px] font-bold text-black/60 shadow-sm transition hover:border-[#79d84a] hover:text-[#45a421]">{name}</motion.button>)}</div>
           {topic && <motion.div initial={reduceMotion ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="overflow-hidden">{!!topic.subtopics.length && <fieldset className="mt-4"><legend className="text-xs font-black">Subtópico</legend><div className="mt-2 flex flex-wrap gap-1.5">{["Todos", ...topic.subtopics].map((item) => { const value = item === "Todos" ? "ALL" : item; return <OptionPill key={item} active={subtopic === value} onClick={() => setSubtopic(value)}>{item}</OptionPill> })}</div></fieldset>}<fieldset className="mt-4"><legend className="text-xs font-black">Dificuldade das perguntas</legend><div className="mt-2 grid grid-cols-3 gap-2">{difficulties.map(([value, label]) => <OptionButton key={value} active={difficulty === value} onClick={() => setDifficulty(value)}>{label}</OptionButton>)}</div></fieldset></motion.div>}
           <fieldset className="mt-5"><legend className="text-xs font-black">Tempo por turno</legend><div className="mt-2 grid grid-cols-4 gap-2">{[[15, "15s"], [30, "30s"], [60, "60s"], [null, "Livre"]].map(([seconds, label]) => <OptionButton key={label} active={turnTimeSeconds === seconds} onClick={() => setTurnTimeSeconds(seconds as number | null)}><Clock3 className="size-3" />{label}</OptionButton>)}</div></fieldset>
+          <fieldset className="mt-5"><legend className="text-xs font-black">Quantidade de rounds</legend><p className="mt-1 text-[10px] text-black/40">Vence quem ganhar a maioria dos rounds.</p><div className="mt-2 grid grid-cols-3 gap-2">{[1, 3, 5].map((value) => <OptionButton key={value} active={totalRounds === value} onClick={() => setTotalRounds(value)}><Layers3 className="size-3" />{value} {value === 1 ? "round" : "rounds"}</OptionButton>)}</div></fieldset>
           <ToggleRow checked={vsBot} onChange={setVsBot} icon={<Bot className="size-4" />} title="Jogar contra o Ritimu Bot" description="Comece imediatamente, sem esperar outro jogador." />
           {vsBot && <motion.fieldset initial={reduceMotion ? false : { opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="mt-3 overflow-hidden"><legend className="text-xs font-black">Dificuldade do bot</legend><div className="mt-2 grid grid-cols-3 gap-2">{difficulties.map(([value, label]) => <OptionButton key={value} active={botDifficulty === value} onClick={() => setBotDifficulty(value)}>{label}</OptionButton>)}</div></motion.fieldset>}
           <ToggleRow checked={allowCapture} onChange={setAllowCapture} icon={<RefreshCcw className="size-4" />} title="Permitir captura de casa" description="Ao acertar, você pode remarcar uma casa adversária." />
