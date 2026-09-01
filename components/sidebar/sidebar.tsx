@@ -17,7 +17,7 @@ const navigationItems = [
 
 export function Sidebar() {
   const pathname = usePathname()
-  const isDarkPage = pathname === "/plano-de-estudos" || pathname.startsWith("/plano-de-estudos/") || pathname.startsWith("/code-battle")
+  const isDarkPage = pathname === "/plano-de-estudos" || pathname.startsWith("/plano-de-estudos/")
 
   return (
     <nav
