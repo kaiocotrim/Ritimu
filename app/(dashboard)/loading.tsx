@@ -1,0 +1,3 @@
+export default function DashboardLoading() {
+  return <main className="min-h-screen bg-[#F6F5F1] px-4 py-8 sm:px-8 lg:px-16" aria-label="Carregando conteúdo"><div className="mx-auto max-w-6xl animate-pulse motion-reduce:animate-none"><div className="h-10 w-56 rounded-xl bg-black/10" /><div className="mt-3 h-4 w-80 max-w-full rounded bg-black/[.06]" /><div className="mt-8 grid gap-5 md:grid-cols-2"><div className="h-52 rounded-3xl bg-black/[.07]" /><div className="h-52 rounded-3xl bg-black/[.07]" /></div><div className="mt-5 h-72 rounded-3xl bg-black/[.07]" /></div><span className="sr-only">Carregando...</span></main>
+}

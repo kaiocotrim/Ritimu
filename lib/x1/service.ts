@@ -14,6 +14,8 @@ const asBoard = (value: unknown) => value as X1Board
 const turnTimes = [15, 30, 45, 60] as const
 const BOT_ID = "RITIMU_BOT"
 const roundOptions = [1, 3, 5] as const
+const X1_QUESTION_COUNT = 50
+const difficultyPoints = { EASY: 100, MEDIUM: 150, HARD: 200 } as const
 
 function winsRequired(totalRounds: number) { return Math.floor(totalRounds / 2) + 1 }
 
@@ -56,11 +58,10 @@ async function playBotTurn(code: string) {
     const draw = !match.allowCapture && correct && boardIsDraw(nextBoard)
     const now = new Date()
     await tx.x1MatchQuestion.update({ where: { id: reserved.id }, data: { used: true, usedAt: now } })
-    await tx.x1Move.create({ data: { matchId: match.id, playerId: null, isBot: true, round: match.currentRound, cell, questionId: reserved.questionId, selectedAnswer: correct ? "[BOT_CORRECT]" : "[BOT_INCORRECT]", correct } })
+    await tx.x1Move.create({ data: { matchId: match.id, playerId: null, isBot: true, round: match.currentRound, cell, questionId: reserved.questionId, selectedAnswer: correct ? "[BOT_CORRECT]" : "[BOT_INCORRECT]", correct, points: correct ? difficultyPoints[match.questionDifficulty] : 0 } })
     const roundFinished = Boolean(won || draw)
     const nextWinsO = match.roundWinsO + (won ? 1 : 0)
     const matchFinished = nextWinsO >= winsRequired(match.totalRounds) || roundFinished && match.currentRound >= match.totalRounds
-    if (roundFinished && !matchFinished) await tx.x1MatchQuestion.updateMany({ where: { matchId: match.id }, data: { used: false, usedAt: null } })
     await tx.x1Match.update({ where: { id: match.id }, data: { board: roundFinished && !matchFinished ? emptyBoard() : nextBoard, ...(roundFinished ? { capturesX: 0, capturesO: 0 } : correct && isCapture ? { capturesO: { increment: 1 } } : {}), roundWinsO: nextWinsO, currentRound: roundFinished && !matchFinished ? { increment: 1 } : undefined, currentTurnUserId: matchFinished ? null : match.playerXId, turnStartedAt: matchFinished ? null : now, status: matchFinished ? "FINISHED" : "PLAYING", winnerId: matchFinished && match.roundWinsX > nextWinsO ? match.playerXId : null, finishedAt: matchFinished ? now : null } })
   }, { isolationLevel: "Serializable" })
 }
@@ -68,6 +69,15 @@ async function playBotTurn(code: string) {
 export async function listSubjects() {
   const rows = await prisma.x1Question.findMany({ where: { active: true }, distinct: ["subject"], select: { subject: true }, orderBy: { subject: "asc" } })
   return rows.map((row) => row.subject)
+}
+
+export async function findActiveMatchCode(userId: string) {
+  const match = await prisma.x1Match.findFirst({
+    where: { OR: [{ playerXId: userId }, { playerOId: userId }], status: { in: ["WAITING", "PREPARING", "PLAYING"] } },
+    orderBy: { updatedAt: "desc" },
+    select: { code: true },
+  })
+  return match?.code ?? null
 }
 
 export async function createRoom(userId: string, settings: { turnTimeSeconds: number | null; allowCapture: boolean; captureLimit: number; totalRounds: number; vsBot: boolean; botDifficulty: "EASY" | "MEDIUM" | "HARD"; topicId: string; subtopic: string | null; difficulty: "EASY" | "MEDIUM" | "HARD" }) {
@@ -78,7 +88,7 @@ export async function createRoom(userId: string, settings: { turnTimeSeconds: nu
   const topic = await prisma.knowledgeTopic.findFirst({ where: { id: settings.topicId, active: true }, select: { id: true, name: true } })
   if (!topic) throw new X1Error("Escolha um tema válido.", 400)
   for (let attempt = 0; attempt < 10; attempt++) {
-    try { return await prisma.x1Match.create({ data: { code: createRoomCode(), playerXId: userId, board: emptyBoard(), turnTimeSeconds: settings.turnTimeSeconds, allowCapture: settings.allowCapture, captureLimit: settings.captureLimit, totalRounds: settings.totalRounds, isBotMatch: settings.vsBot, botDifficulty: settings.vsBot ? settings.botDifficulty : null, topicId: topic.id, subtopic: settings.subtopic, questionDifficulty: settings.difficulty, playerXSubject: topic.name, playerOSubject: null, status: settings.vsBot ? "PREPARING" : "WAITING" }, select: { id: true, code: true } }) }
+    try { return await prisma.x1Match.create({ data: { code: createRoomCode(), playerXId: userId, board: emptyBoard(), turnTimeSeconds: settings.turnTimeSeconds, allowCapture: settings.allowCapture, captureLimit: settings.captureLimit, totalRounds: settings.totalRounds, requiredCount: X1_QUESTION_COUNT, isBotMatch: settings.vsBot, botDifficulty: settings.vsBot ? settings.botDifficulty : null, topicId: topic.id, subtopic: settings.subtopic, questionDifficulty: settings.difficulty, playerXSubject: topic.name, playerOSubject: null, status: settings.vsBot ? "PREPARING" : "WAITING" }, select: { id: true, code: true } }) }
     catch (error) { if (attempt === 9) throw error }
   }
   throw new X1Error("Não foi possível criar a sala.", 500)
@@ -106,7 +116,7 @@ export async function getPublicMatch(rawCode: string, userId: string): Promise<X
   await playBotTurn(code)
   const match = await prisma.x1Match.findUnique({
     where: { code },
-    include: { topic: { select: { id: true, name: true } }, playerX: { select: person }, playerO: { select: person }, winner: { select: person }, currentQuestion: { select: { id: true, subject: true, question: true, options: true } }, moves: { select: { playerId: true, correct: true, isBot: true, round: true }, orderBy: { createdAt: "asc" } } },
+    include: { topic: { select: { id: true, name: true } }, playerX: { select: person }, playerO: { select: person }, winner: { select: person }, currentQuestion: { select: { id: true, subject: true, question: true, options: true } }, moves: { select: { playerId: true, correct: true, isBot: true, round: true, selectedAnswer: true, points: true, responseTimeMs: true, question: { select: { question: true, correctAnswer: true, explanation: true } } }, orderBy: { createdAt: "asc" } } },
   })
   if (!match || (match.playerXId !== userId && match.playerOId !== userId)) throw new X1Error("Sala não encontrada.", 404)
   const maySeeQuestion = match.currentTurnUserId === userId && match.currentQuestion && match.currentCell !== null
@@ -168,16 +178,18 @@ export async function answerQuestion(rawCode: string, userId: string, answer: st
     const won = correct ? boardWinner(board) : null
     const draw = !match.allowCapture && correct && boardIsDraw(board)
     const nextUserId = nextTurn(match, userId)
-    await tx.x1Move.create({ data: { matchId: match.id, playerId: userId, round: match.currentRound, cell: match.currentCell, questionId: match.currentQuestion.id, selectedAnswer: answer, correct } })
     const now = new Date()
+    const responseTimeMs = match.turnStartedAt ? Math.max(0, now.getTime() - match.turnStartedAt.getTime()) : null
+    const speedBonus = correct && match.turnTimeSeconds && responseTimeMs !== null ? Math.max(0, Math.round((1 - responseTimeMs / (match.turnTimeSeconds * 1000)) * 100)) : 0
+    const points = correct ? difficultyPoints[match.questionDifficulty] + speedBonus : 0
+    await tx.x1Move.create({ data: { matchId: match.id, playerId: userId, round: match.currentRound, cell: match.currentCell, questionId: match.currentQuestion.id, selectedAnswer: answer, correct, responseTimeMs, points } })
     const roundFinished = Boolean(won || draw)
     const nextWinsX = match.roundWinsX + (won && symbol === "X" ? 1 : 0)
     const nextWinsO = match.roundWinsO + (won && symbol === "O" ? 1 : 0)
     const matchFinished = nextWinsX >= winsRequired(match.totalRounds) || nextWinsO >= winsRequired(match.totalRounds) || roundFinished && match.currentRound >= match.totalRounds
     const winnerId = matchFinished && nextWinsX !== nextWinsO ? nextWinsX > nextWinsO ? match.playerXId : match.playerOId : null
-    if (roundFinished && !matchFinished) await tx.x1MatchQuestion.updateMany({ where: { matchId: match.id }, data: { used: false, usedAt: null } })
     await tx.x1Match.update({ where: { id: match.id }, data: { board: roundFinished && !matchFinished ? emptyBoard() : board, ...(roundFinished ? { capturesX: 0, capturesO: 0 } : correct && isCapture ? symbol === "X" ? { capturesX: { increment: 1 } } : { capturesO: { increment: 1 } } : {}), roundWinsX: nextWinsX, roundWinsO: nextWinsO, currentRound: roundFinished && !matchFinished ? { increment: 1 } : undefined, currentQuestionId: null, currentCell: null, currentTurnUserId: matchFinished ? null : roundFinished ? match.playerXId : nextUserId, turnStartedAt: matchFinished ? null : now, status: matchFinished ? "FINISHED" : "PLAYING", winnerId, finishedAt: matchFinished ? now : null } })
-    return { correct, correctAnswer: match.currentQuestion.correctAnswer, explanation: match.currentQuestion.explanation, finished: matchFinished, roundFinished }
+    return { correct, correctAnswer: match.currentQuestion.correctAnswer, explanation: match.currentQuestion.explanation, points, finished: matchFinished, roundFinished }
   }, { isolationLevel: "Serializable" })
 }
 

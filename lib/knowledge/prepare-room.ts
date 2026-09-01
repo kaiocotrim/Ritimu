@@ -14,14 +14,16 @@ export async function prepareRoomQuestions(matchId: string) {
     if (!match?.topic) throw new Error("Tema da sala não encontrado.")
     const where = { topicId: match.topicId!, difficulty: match.questionDifficulty, active: true, reviewStatus: "APPROVED" as const, ...(match.subtopic ? { subtopic: match.subtopic } : {}) }
     let existing = await prisma.x1Question.findMany({ where, select: { id: true, question: true, options: true } })
-    const missing = missingQuestionCount(existing.length, match.requiredCount)
-    if (missing) {
+    let generationAttempts = 0
+    while (missingQuestionCount(existing.length, match.requiredCount) > 0 && generationAttempts < 6) {
+      const missing = missingQuestionCount(existing.length, match.requiredCount)
       await prisma.x1Match.update({ where: { id: match.id }, data: { preparationStatus: "GENERATING_QUESTIONS", preparedCount: existing.length } })
       const generated = await generateQuestions({ topic: match.topic.name, subtopic: match.subtopic, difficulty: match.questionDifficulty, count: Math.min(missing, 12) })
       const known = new Set(existing.map((item) => questionFingerprint(item.question, item.options as string[])))
       const fresh = generated.filter((item) => !known.has(questionFingerprint(item.statement, item.alternatives)))
       await prisma.x1Question.createMany({ data: fresh.map((item) => ({ subject: match.topic!.name, topicId: match.topicId, subtopic: match.subtopic, difficulty: match.questionDifficulty, question: item.statement, options: item.alternatives, correctAnswer: item.alternatives[item.correctAnswerIndex], explanation: item.explanation, source: "AI", reviewStatus: "APPROVED", fingerprint: questionFingerprint(item.statement, item.alternatives) })), skipDuplicates: true })
       existing = await prisma.x1Question.findMany({ where, select: { id: true, question: true, options: true } })
+      generationAttempts++
     }
     if (existing.length < match.requiredCount) throw new QuestionGenerationUnavailable(`Há apenas ${existing.length} perguntas disponíveis para este tema e dificuldade.`)
     const selected = selectGameQuestionIds(existing.map((item) => item.id), match.requiredCount)

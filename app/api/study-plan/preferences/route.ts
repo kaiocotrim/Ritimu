@@ -42,7 +42,16 @@ export async function PUT(request: Request) {
 export async function PATCH(request: Request) {
   const userId = await getStudyPlanUserId()
   if (!userId) return Response.json({ error: "Não autenticado" }, { status: 401 })
-  const body = await request.json().catch(() => null) as { plannerTheme?: unknown; missionsBackgroundMode?: unknown; missionsBackgroundUrl?: unknown } | null
+  const body = await request.json().catch(() => null) as { plannerTheme?: unknown; missionsBackgroundMode?: unknown; missionsBackgroundUrl?: unknown; notificationsEnabled?: unknown; dashboardShowStreak?: unknown; dashboardShowAgenda?: unknown } | null
+  if (typeof body?.dashboardShowStreak === "boolean" || typeof body?.dashboardShowAgenda === "boolean") {
+    const data = { ...(typeof body.dashboardShowStreak === "boolean" ? { dashboardShowStreak: body.dashboardShowStreak } : {}), ...(typeof body.dashboardShowAgenda === "boolean" ? { dashboardShowAgenda: body.dashboardShowAgenda } : {}) }
+    await prisma.studyPreference.upsert({ where: { userId }, create: { userId, ...data }, update: data })
+    return Response.json({ success: true, ...data })
+  }
+  if (typeof body?.notificationsEnabled === "boolean") {
+    await prisma.studyPreference.upsert({ where: { userId }, create: { userId, notificationsEnabled: body.notificationsEnabled }, update: { notificationsEnabled: body.notificationsEnabled } })
+    return Response.json({ success: true, notificationsEnabled: body.notificationsEnabled })
+  }
   if (body?.missionsBackgroundMode !== undefined) {
     const mode = body.missionsBackgroundMode === "DEFAULT" ? "DEFAULT" : body.missionsBackgroundMode === "IMAGE" ? "IMAGE" : null
     if (!mode) return Response.json({ error: "Opção de fundo inválida." }, { status: 400 })

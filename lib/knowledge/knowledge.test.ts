@@ -21,7 +21,7 @@ describe("perguntas preparadas", () => {
   it("rejeita alternativas duplicadas", () => expect(() => validateGeneratedQuestions({ questions: [{ ...valid, alternatives: ["A", "A", "B", "C"] }] })).toThrow(/diferentes/))
   it("rejeita pergunta sem resposta correta válida", () => expect(() => validateGeneratedQuestions({ questions: [{ ...valid, correctAnswerIndex: -1 }] })).toThrow(/única/))
   it("não repete perguntas na seleção", () => expect(selectGameQuestionIds(["a", "a", "b", "c"], 3, () => .5)).toHaveLength(3))
-  it("calcula somente a quantidade faltante", () => { expect(missingQuestionCount(8, 12)).toBe(4); expect(missingQuestionCount(15, 12)).toBe(0) })
+  it("calcula somente a quantidade faltante para o banco de 50", () => { expect(missingQuestionCount(8, 50)).toBe(42); expect(missingQuestionCount(55, 50)).toBe(0) })
   it("não inclui resposta correta em um DTO público", () => { const dto = { id: "q1", statement: valid.statement, alternatives: valid.alternatives }; expect(dto).not.toHaveProperty("correctAnswerIndex") })
   it("funciona sem chave de API", () => expect(hasQuestionGenerationConfig(undefined)).toBe(false))
 })

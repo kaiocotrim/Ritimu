@@ -10,7 +10,7 @@ import { TopicCombobox, type TopicOption } from "@/components/x1/topic-combobox"
 const popularTopics = ["Futebol", "Jiu-jítsu", "História", "Geografia", "Animes", "Minecraft"]
 const difficulties = [["EASY", "Fácil"], ["MEDIUM", "Médio"], ["HARD", "Difícil"]] as const
 
-export function X1Home() {
+export function X1Home({ activeMatchCode }: { activeMatchCode: string | null }) {
   const router = useRouter(), reduceMotion = useReducedMotion()
   const [code, setCode] = useState(""), [createdCode, setCreatedCode] = useState(""), [copied, setCopied] = useState(false)
   const [mode, setMode] = useState<"CREATE" | "JOIN">("CREATE")
@@ -52,8 +52,10 @@ export function X1Home() {
   return <div className="x1-screen mx-auto max-w-3xl pb-8">
     <motion.header initial={reduceMotion ? false : { opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mx-auto mb-7 text-center">
       <h1 className="text-3xl font-black tracking-[-.04em] text-[#101313] sm:text-4xl">Jogo da Velha <span className="text-[#50b92e]">Valendo Conhecimento</span></h1>
-      <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-black/45">Escolha um tema, responda às perguntas e forme três em linha.</p>
+      <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-black/45">Escolha um tema, jogue com um banco de 50 perguntas e forme três em linha.</p>
     </motion.header>
+
+    {activeMatchCode && <button type="button" onClick={() => router.push(`/x1/${activeMatchCode}`)} className="mx-auto mb-4 flex w-full max-w-xl items-center justify-between rounded-2xl border border-[#8edb69] bg-[#efffe8] px-5 py-4 text-left shadow-sm"><span><strong className="block text-sm">Você tem uma partida em andamento</strong><span className="text-xs text-black/45">Sala {activeMatchCode}</span></span><span className="rounded-full bg-[#50c735] px-4 py-2 text-xs font-black">Retomar partida</span></button>}
 
     <div className="mx-auto mb-4 grid max-w-xl grid-cols-2 rounded-xl border border-black/[.07] bg-white p-1 shadow-sm">
       <button type="button" onClick={() => { setMode("CREATE"); setError("") }} className={`flex h-11 cursor-pointer items-center justify-center gap-2 rounded-lg text-sm font-bold transition ${mode === "CREATE" ? "bg-[#111] text-white shadow-sm" : "text-black/45 hover:bg-black/[.03] hover:text-black"}`}><Plus className="size-4" /> Criar sala</button>

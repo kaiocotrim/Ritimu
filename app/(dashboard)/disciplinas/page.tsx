@@ -4,6 +4,7 @@ import { RocketLaunchIcon } from "@/components/animations/rocket/page"
 
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import Image from "next/image"
 import Link from "next/link"
 import {
   BookOpen,
@@ -324,7 +325,7 @@ export default async function DisciplinasPage({
                       className="flex items-center gap-1.5 text-black/60"
                       title="Nível estimado a partir do seu progresso"
                     >
-                     <img src="trophy_1f3c6.png" alt="" width="13" height="13" />  Nível {course.level}
+                     <Image src="/trophy_1f3c6.png" alt="" width={13} height={13} /> Nível {course.level}
                     </span>
                   </div>
                 </Link>

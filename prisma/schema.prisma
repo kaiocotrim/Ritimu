@@ -138,7 +138,7 @@ model X1Match {
   questionDifficulty  X1QuestionDifficulty @default(MEDIUM)
   preparationStatus   X1PreparationStatus  @default(SEARCHING_DATABASE)
   preparedCount       Int                  @default(0)
-  requiredCount       Int                  @default(12)
+  requiredCount       Int                  @default(50)
   preparationError    String?
   preparationLockedAt DateTime?
   currentTurnUserId   String?
@@ -199,6 +199,8 @@ model X1Move {
   question       X1Question @relation(fields: [questionId], references: [id], onDelete: Restrict)
   selectedAnswer String
   correct        Boolean
+  responseTimeMs Int?
+  points         Int        @default(0)
   round          Int        @default(1)
   createdAt      DateTime   @default(now())
 
@@ -351,6 +353,9 @@ model StudyPreference {
   plannerTheme           String               @default("SPACE")
   missionsBackgroundMode String               @default("DEFAULT")
   missionsBackgroundUrl  String?
+  notificationsEnabled   Boolean              @default(true)
+  dashboardShowStreak    Boolean              @default(true)
+  dashboardShowAgenda    Boolean              @default(true)
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt
 }

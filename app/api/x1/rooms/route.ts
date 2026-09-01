@@ -3,7 +3,7 @@ import { requireX1UserId } from "@/lib/x1/auth"
 import { createRoom, x1ErrorResponse } from "@/lib/x1/service"
 import { prepareRoomQuestions } from "@/lib/knowledge/prepare-room"
 
-export const maxDuration = 30
+export const maxDuration = 300
 
 export async function POST(request: Request) {
   const userId = await requireX1UserId()

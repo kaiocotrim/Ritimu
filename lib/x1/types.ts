@@ -31,7 +31,16 @@ export type X1PublicMatch = {
   turnEndsAt: string | null
   winner: X1Player | null
   activeQuestion: { id: string; subject: string; question: string; options: string[]; cell: number } | null
-  moves: { playerId: string | null; correct: boolean; isBot: boolean; round: number }[]
+  moves: {
+    playerId: string | null
+    correct: boolean
+    isBot: boolean
+    round: number
+    points: number
+    responseTimeMs: number | null
+    selectedAnswer: string
+    question: { question: string; correctAnswer: string; explanation: string | null } | null
+  }[]
   startedAt: string | null
   finishedAt: string | null
 }

@@ -1,0 +1,2 @@
+ALTER TABLE "X1Match"
+ALTER COLUMN "requiredCount" SET DEFAULT 50;

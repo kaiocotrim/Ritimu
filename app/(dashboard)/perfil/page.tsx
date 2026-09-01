@@ -2,16 +2,13 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import {
-  Bell,
   BookOpen,
   CalendarDays,
   CheckCircle2,
   ChevronRight,
   Flame,
-  LockKeyhole,
   Mail,
   Medal,
-  Pencil,
   ShieldCheck,
   Sparkles,
 } from "lucide-react"
@@ -21,6 +18,8 @@ import { AnimatedCard, AnimatedItem } from "@/components/dashboard/animated-card
 import { Sidebar } from "@/components/sidebar/sidebar"
 import { StudyPlanThemePreference } from "@/components/profile/study-plan-theme-preference"
 import { MissionsBackgroundPreference } from "@/components/profile/missions-background-preference"
+import { AccountSettings } from "@/components/profile/account-settings"
+import { DashboardPreferences } from "@/components/profile/dashboard-preferences"
 import { auth } from "@/lib/auth"
 import { getGamificationSummary } from "@/lib/gamification"
 import { prisma } from "@/lib/prisma"
@@ -56,7 +55,7 @@ export default async function PerfilPage() {
         xpTransactions: { select: { amount: true } },
       },
     }),
-    prisma.studyPreference.findUnique({ where: { userId: session.user.id }, select: { plannerTheme: true, missionsBackgroundMode: true, missionsBackgroundUrl: true } }),
+    prisma.studyPreference.findUnique({ where: { userId: session.user.id }, select: { plannerTheme: true, missionsBackgroundMode: true, missionsBackgroundUrl: true, notificationsEnabled: true, dashboardShowStreak: true, dashboardShowAgenda: true } }),
   ])
 
   const orderedUsers = xpByUser
@@ -115,13 +114,6 @@ export default async function PerfilPage() {
               </div>
             </div>
 
-            <button
-              type="button"
-              className="flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium transition hover:bg-white/15"
-            >
-              <Pencil className="size-4" aria-hidden="true" />
-              Editar perfil
-            </button>
           </div>
         </AnimatedCard>
 
@@ -186,23 +178,14 @@ export default async function PerfilPage() {
             <p className="mt-1 text-sm text-black/45">Configure sua experiência no Ritimu.</p>
 
             <div className="mt-6 divide-y divide-black/5">
-              <button className="flex w-full items-center gap-4 py-4 text-left" type="button">
-                <Bell className="size-5 text-black/45" aria-hidden="true" />
-                <span className="flex-1 font-medium">Notificações</span>
-                <span className="text-sm text-[#45B950]">Ativadas</span>
-                <ChevronRight className="size-4 text-black/25" aria-hidden="true" />
-              </button>
-              <button className="flex w-full items-center gap-4 py-4 text-left" type="button">
-                <LockKeyhole className="size-5 text-black/45" aria-hidden="true" />
-                <span className="flex-1 font-medium">Alterar senha</span>
-                <ChevronRight className="size-4 text-black/25" aria-hidden="true" />
-              </button>
+              <AccountSettings initialName={session.user.name} initialNotifications={studyPreference?.notificationsEnabled ?? true} />
               <div className="flex items-center gap-4 py-4">
                 <ShieldCheck className="size-5 text-black/45" aria-hidden="true" />
                 <span className="flex-1 font-medium">Conta protegida</span>
                 <span className="text-sm text-black/40">Verificada</span>
               </div>
               <StudyPlanThemePreference initialTheme={studyPreference?.plannerTheme === "LIGHT" ? "LIGHT" : "SPACE"} />
+              <DashboardPreferences initialStreak={studyPreference?.dashboardShowStreak ?? true} initialAgenda={studyPreference?.dashboardShowAgenda ?? true} />
               <MissionsBackgroundPreference
                 initialMode={studyPreference?.missionsBackgroundMode === "IMAGE" ? "IMAGE" : "DEFAULT"}
                 initialUrl={studyPreference?.missionsBackgroundUrl ?? ""}

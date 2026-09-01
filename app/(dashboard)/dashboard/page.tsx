@@ -15,6 +15,7 @@ import {
 import { auth } from "@/lib/auth"
 import { getGamificationSummary } from "@/lib/gamification"
 import { getTodayCalendarEvents } from "@/lib/study-plan/today"
+import { prisma } from "@/lib/prisma"
 
 
 const weekDays = [
@@ -36,9 +37,10 @@ export default async function Dashboard() {
     redirect("/login")
   }
 
-  const [gamification, todayEvents] = await Promise.all([
+  const [gamification, todayEvents, dashboardPreference] = await Promise.all([
     getGamificationSummary(session.user.id),
     getTodayCalendarEvents(session.user.id),
+    prisma.studyPreference.findUnique({ where: { userId: session.user.id }, select: { dashboardShowStreak: true, dashboardShowAgenda: true } }),
   ])
   const completedToday = todayEvents.filter((event) => event.occurrenceCompleted).length
   const todayProgress = {
@@ -141,20 +143,14 @@ export default async function Dashboard() {
               </span>
             </div>
 
-            <Link href="/progresso-hoje" className="relative z-10 mt-3 block text-center text-sm font-medium text-[#50D05C] hover:text-[#45B950]">
-
-              <button
-                type="button"
-                className="cursor-pointer flex w-full items-center justify-center gap-2 rounded-2xl bg-[#50D05C] py-4 text-base font-semibold text-white transition hover:bg-[#45B950]"
-              >
+            <Link href="/progresso-hoje" className="relative z-10 mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#50D05C] py-4 text-base font-semibold text-white transition hover:bg-[#45B950]">
                 Continuar
                 <ChevronRight className="h-5 w-5" />
-              </button>
             </Link>
           </AnimatedCard>
 
           {/* Sequência */}
-          <AnimatedCard
+          {(dashboardPreference?.dashboardShowStreak ?? true) && <AnimatedCard
             delay={0.19}
             className="group relative flex flex-col overflow-hidden rounded-3xl border border-black/5 bg-white p-4 sm:p-7"
           >
@@ -195,10 +191,10 @@ export default async function Dashboard() {
                 </div>
               ))}
             </div>
-          </AnimatedCard>
+          </AnimatedCard>}
 
           {/* Agenda de hoje */}
-          <AnimatedCard
+          {(dashboardPreference?.dashboardShowAgenda ?? true) && <AnimatedCard
             delay={0.26}
             className="group relative overflow-hidden rounded-3xl border border-black/5 bg-white p-6 sm:p-7"
           >
@@ -251,7 +247,7 @@ export default async function Dashboard() {
                 </div>
               ))}
             </div>
-          </AnimatedCard>
+          </AnimatedCard>}
         </div>
       </div>
 

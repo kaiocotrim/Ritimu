@@ -17,6 +17,8 @@ type RankingStudent = {
   streak: number
   initials: string
   color: string
+  x1Matches: number
+  x1Wins: number
 }
 
 const avatarColors = ["bg-violet-500", "bg-sky-500", "bg-amber-500", "bg-[#50D05C]", "bg-pink-500", "bg-orange-500", "bg-cyan-500"]
@@ -38,6 +40,7 @@ export default async function RankingPage() {
       xpTransactions: {
         select: { amount: true, earnedAt: true },
       },
+      _count: { select: { x1MatchesAsX: true, x1MatchesAsO: true, x1MatchesWon: true } },
     },
   })
 
@@ -51,6 +54,8 @@ export default async function RankingPage() {
         streak: calculateStreak(user.xpTransactions.map((transaction) => transaction.earnedAt)),
         initials: getInitials(user.name || user.email),
         color: avatarColors[index % avatarColors.length],
+        x1Matches: user._count.x1MatchesAsX + user._count.x1MatchesAsO,
+        x1Wins: user._count.x1MatchesWon,
       }
     })
     .sort((a, b) => b.xp - a.xp || b.streak - a.streak || a.name.localeCompare(b.name, "pt-BR"))
@@ -153,6 +158,7 @@ export default async function RankingPage() {
                     <p className="truncate font-semibold">{student.name}{isCurrentUser ? " (você)" : ""}</p>
                     <p className="truncate text-xs text-black/45">{student.email}</p>
                     <p className="text-xs text-black/45">🔥 {student.streak} dias de sequência</p>
+                    <p className="text-xs text-black/45">X1: {student.x1Wins} vitórias em {student.x1Matches} partidas</p>
                   </div>
 
                   <div className="flex shrink-0 items-center gap-1.5 font-semibold">

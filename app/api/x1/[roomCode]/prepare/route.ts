@@ -1,6 +1,8 @@
 import { requireX1UserId } from "@/lib/x1/auth"
 import { prisma } from "@/lib/prisma"
 import { prepareRoomQuestions } from "@/lib/knowledge/prepare-room"
+
+export const maxDuration = 300
 import { normalizeRoomCode } from "@/lib/x1/room-code"
 
 export async function POST(_request: Request, context: { params: Promise<{ roomCode: string }> }) {
