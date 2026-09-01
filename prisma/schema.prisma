@@ -33,6 +33,10 @@ model User {
   x1MatchesAsO                X1Match[]                    @relation("X1PlayerO")
   x1MatchesWon                X1Match[]                    @relation("X1Winner")
   x1Moves                     X1Move[]
+  codeBattleRoomsHosted       CodeBattleRoom[]             @relation("CodeBattleRoomHost")
+  codeBattleParticipants      CodeBattleParticipant[]
+  codeBattlesWon              CodeBattle[]                 @relation("CodeBattleWinner")
+  codeBattleAnswers           CodeBattleAnswer[]
 
   @@unique([email])
   @@map("user")
@@ -535,6 +539,39 @@ enum XpSource {
   STUDY_SESSION
   STUDY_CONTENT
   MISSION
+  CODE_BATTLE
+}
+
+enum CodeBattleRoomStatus {
+  WAITING
+  PLAYING
+  FINISHED
+  CANCELED
+  EXPIRED
+}
+
+enum CodeBattleStatus {
+  WAITING
+  PLAYING
+  FINISHED
+  CANCELED
+  ABANDONED
+}
+
+enum CodeBattleTopic {
+  LOGIC
+  JAVASCRIPT
+  TYPESCRIPT
+  REACT
+  NODEJS
+  SQL
+  HTML_CSS
+}
+
+enum CodeBattleDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
 }
 
 model XpTransaction {
@@ -551,4 +588,95 @@ model XpTransaction {
   @@unique([userId, source, referenceId])
   @@index([userId, earnedAt])
   @@index([source, referenceId])
+}
+
+model CodeBattleRoom {
+  id              String                  @id @default(cuid())
+  code            String                  @unique
+  hostId          String
+  host            User                    @relation("CodeBattleRoomHost", fields: [hostId], references: [id], onDelete: Cascade)
+  topic           CodeBattleTopic
+  difficulty      CodeBattleDifficulty
+  questionCount   Int                     @default(5)
+  timePerQuestion Int                     @default(20)
+  status          CodeBattleRoomStatus    @default(WAITING)
+  expiresAt       DateTime
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  participants    CodeBattleParticipant[]
+  battle          CodeBattle?
+
+  @@index([code])
+  @@index([hostId])
+  @@index([status, expiresAt])
+}
+
+model CodeBattleParticipant {
+  id       String         @id @default(cuid())
+  roomId   String
+  room     CodeBattleRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ready    Boolean        @default(false)
+  joinedAt DateTime       @default(now())
+
+  @@unique([roomId, userId])
+  @@index([roomId, ready])
+  @@index([userId])
+}
+
+model CodeBattle {
+  id                   String               @id @default(cuid())
+  roomId               String               @unique
+  room                 CodeBattleRoom       @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  status               CodeBattleStatus     @default(WAITING)
+  currentQuestionIndex Int                  @default(0)
+  questionStartedAt    DateTime?
+  startedAt            DateTime?
+  finishedAt           DateTime?
+  winnerId             String?
+  winner               User?                @relation("CodeBattleWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  questions            CodeBattleQuestion[]
+  answers              CodeBattleAnswer[]
+
+  @@index([status])
+  @@index([winnerId])
+}
+
+model CodeBattleQuestion {
+  id            String             @id @default(cuid())
+  battleId      String
+  battle        CodeBattle         @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  position      Int
+  statement     String
+  options       Json
+  correctOption Int
+  explanation   String
+  topic         CodeBattleTopic
+  difficulty    CodeBattleDifficulty
+  answers       CodeBattleAnswer[]
+
+  @@unique([battleId, position])
+  @@index([battleId, position])
+}
+
+model CodeBattleAnswer {
+  id             String             @id @default(cuid())
+  battleId       String
+  battle         CodeBattle         @relation(fields: [battleId], references: [id], onDelete: Cascade)
+  questionId     String
+  question       CodeBattleQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  selectedOption Int?
+  isCorrect      Boolean            @default(false)
+  responseTimeMs Int
+  points         Int
+  answeredAt     DateTime           @default(now())
+
+  @@unique([questionId, userId])
+  @@index([battleId, userId])
+  @@index([questionId])
 }
