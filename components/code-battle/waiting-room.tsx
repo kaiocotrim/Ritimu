@@ -4,8 +4,6 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Copy, LogOut, Play, Radio, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase/client"
-import { codeBattleChannelName } from "@/lib/code-battle/realtime"
 import { difficultyLabels, topicLabels } from "@/lib/code-battle/types"
 
 type RoomState = { id: string; code: string; hostId: string; topic: keyof typeof topicLabels; difficulty: keyof typeof difficultyLabels; questionCount: number; timePerQuestion: number; status: string; battle: { id: string; status: string } | null; participants: { userId: string; ready: boolean; user: { id: string; name: string; email: string; image: string | null } }[] }
@@ -29,20 +27,12 @@ export function WaitingRoom({ initialRoom, userId }: { initialRoom: RoomState; u
     const timer = window.setInterval(refresh, 2000)
     return () => window.clearInterval(timer)
   }, [refresh])
-  useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return
-    const channel = supabase.channel(codeBattleChannelName(room.code)).on("broadcast", { event: "code-battle" }, () => void refresh()).subscribe()
-    return () => { void supabase.removeChannel(channel) }
-  }, [refresh, room.code])
-  async function broadcast() {
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) await supabase.channel(codeBattleChannelName(room.code)).send({ type: "broadcast", event: "code-battle", payload: {} })
-  }
   async function post(path: string, body?: unknown) {
     setBusy(true)
     const response = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) })
     const data = await response.json().catch(() => ({}))
     setBusy(false)
-    if (response.ok) { await refresh(); await broadcast(); return data }
+    if (response.ok) { await refresh(); return data }
     alert(data.error ?? "Acao indisponivel.")
   }
   async function start() {
