@@ -17,5 +17,5 @@ export default async function CodeBattleResultPage(props: PageProps<"/code-battl
     if (error instanceof CodeBattleError && error.status === 404) notFound()
     throw error
   }
-  return <main className="min-h-screen bg-[#080b10]"><BattleResult result={result} userId={session.user.id} /><Sidebar /></main>
+  return <main className="min-h-screen bg-[#F6F5F1] text-[#111111]"><BattleResult result={result} userId={session.user.id} /><Sidebar /></main>
 }

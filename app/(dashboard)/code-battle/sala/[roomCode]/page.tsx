@@ -19,5 +19,5 @@ export default async function CodeBattleRoomPage(props: PageProps<"/code-battle/
     throw error
   }
   if (room.battle?.id && room.status === "PLAYING") redirect(`/code-battle/partida/${room.battle.id}`)
-  return <main className="min-h-screen bg-[#080b10]"><WaitingRoom initialRoom={room} userId={session.user.id} /><Sidebar /></main>
+  return <main className="min-h-screen bg-[#F6F5F1] text-[#111111]"><WaitingRoom initialRoom={room} userId={session.user.id} /><Sidebar /></main>
 }

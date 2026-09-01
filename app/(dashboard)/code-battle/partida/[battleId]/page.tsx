@@ -18,5 +18,5 @@ export default async function CodeBattlePlayPage(props: PageProps<"/code-battle/
     throw error
   }
   if (state.battle.status === "FINISHED") redirect(`/code-battle/resultado/${battleId}`)
-  return <main className="min-h-screen bg-[#080b10]"><BattlePlay initialState={state} userId={session.user.id} /><Sidebar /></main>
+  return <main className="min-h-screen bg-[#F6F5F1] text-[#111111]"><BattlePlay initialState={state} userId={session.user.id} /><Sidebar /></main>
 }

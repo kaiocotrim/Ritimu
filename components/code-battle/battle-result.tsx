@@ -8,18 +8,39 @@ type Result = { battle: { id: string; winnerId: string | null }; room: { partici
 export function BattleResult({ result, userId }: { result: Result; userId: string }) {
   const title = result.battle.winnerId === null ? "Empate" : result.battle.winnerId === userId ? "Vitoria" : "Derrota"
   return (
-    <section className="mx-auto min-h-screen max-w-5xl px-4 pb-32 pt-8 text-white sm:px-8">
-      <div className="rounded-[28px] border border-white/10 bg-[#10131a] p-6 text-center">
-        <Trophy className="mx-auto size-12 text-[#69E776]" />
-        <h1 className="mt-4 text-4xl font-black">{title}</h1>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">{result.room.participants.map((participant) => <div key={participant.userId} className="rounded-2xl bg-white/[.04] p-5"><p className="font-bold">{participant.user.name}</p><p className="mt-2 text-3xl font-black text-[#69E776]">{result.scores[participant.userId] ?? 0}</p></div>)}</div>
-        <div className="mt-6 flex justify-center gap-3"><Link className="inline-flex h-10 items-center rounded-2xl bg-[#50D05C] px-4 text-sm font-medium text-[#071109]" href="/code-battle">Jogar novamente</Link><Link className="inline-flex h-10 items-center rounded-2xl border border-white/10 bg-white/5 px-4 text-sm font-medium text-white" href="/code-battle">Voltar ao Code Battle</Link></div>
+    <section className="mx-auto min-h-screen max-w-5xl px-4 pb-32 pt-8 text-[#111111] sm:px-8">
+      <div className="rounded-[28px] border border-black/5 bg-white p-6 text-center shadow-sm">
+        <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-[#50D05C]/15">
+          <Trophy className="size-9 text-[#248A30]" />
+        </div>
+        <h1 className="mt-4 text-4xl font-black tracking-tight">{title}</h1>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {result.room.participants.map((participant) => (
+            <div key={participant.userId} className="rounded-2xl bg-[#F6F5F1] p-5">
+              <p className="font-bold">{participant.user.name}</p>
+              <p className="mt-2 text-3xl font-black text-[#248A30]">{result.scores[participant.userId] ?? 0}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+          <Link className="inline-flex h-11 items-center justify-center rounded-2xl bg-[#50D05C] px-5 text-sm font-bold text-white transition hover:bg-[#45B950]" href="/code-battle">Jogar novamente</Link>
+          <Link className="inline-flex h-11 items-center justify-center rounded-2xl border border-black/10 bg-white px-5 text-sm font-medium text-[#111111] transition hover:bg-black/[.03]" href="/code-battle">Voltar ao Code Battle</Link>
+        </div>
       </div>
-      <div className="mt-6 space-y-3">{result.questions.map((question) => {
-        const options = Array.isArray(question.options) ? question.options.filter((option): option is string => typeof option === "string") : []
-        const mine = question.answers.find((answer) => answer.userId === userId)
-        return <div key={question.id} className="rounded-2xl border border-white/10 bg-[#151922] p-5"><p className="font-bold">{question.statement}</p><p className="mt-3 text-sm text-white/60">Sua resposta: {mine?.selectedOption === null || mine?.selectedOption === undefined ? "sem resposta" : options[mine.selectedOption]}</p><p className="text-sm text-[#69E776]">Correta: {options[question.correctOption]}</p><p className="mt-2 text-sm text-white/45">{question.explanation}</p></div>
-      })}</div>
+      <div className="mt-6 space-y-3">
+        {result.questions.map((question) => {
+          const options = Array.isArray(question.options) ? question.options.filter((option): option is string => typeof option === "string") : []
+          const mine = question.answers.find((answer) => answer.userId === userId)
+          return (
+            <div key={question.id} className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+              <p className="font-bold">{question.statement}</p>
+              <p className="mt-3 text-sm text-black/55">Sua resposta: {mine?.selectedOption === null || mine?.selectedOption === undefined ? "sem resposta" : options[mine.selectedOption]}</p>
+              <p className="text-sm font-semibold text-[#248A30]">Correta: {options[question.correctOption]}</p>
+              <p className="mt-2 text-sm text-black/45">{question.explanation}</p>
+            </div>
+          )
+        })}
+      </div>
     </section>
   )
 }

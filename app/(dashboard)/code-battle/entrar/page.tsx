@@ -7,5 +7,5 @@ import { auth } from "@/lib/auth"
 export default async function JoinCodeBattlePage() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect("/login")
-  return <main className="min-h-screen bg-[#080b10]"><CodeBattleHome mode="join" /><Sidebar /></main>
+  return <main className="min-h-screen bg-[#F6F5F1] text-[#111111]"><CodeBattleHome mode="join" /><Sidebar /></main>
 }
