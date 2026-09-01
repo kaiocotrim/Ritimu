@@ -30,9 +30,13 @@ export async function prepareRoomQuestions(matchId: string) {
     await prisma.$transaction(async (tx) => {
       await tx.x1MatchQuestion.deleteMany({ where: { matchId: match.id, used: false } })
       await tx.x1MatchQuestion.createMany({ data: selected.map((questionId, order) => ({ matchId: match.id, questionId, order })), skipDuplicates: true })
-      const canStart = match.isBotMatch || Boolean(match.playerOId)
+      // The opponent may join while questions are being generated. Read the
+      // current row inside the transaction instead of relying on the stale
+      // match snapshot loaded before generation started.
+      const current = await tx.x1Match.findUniqueOrThrow({ where: { id: match.id }, select: { playerOId: true, status: true, startedAt: true } })
+      const canStart = ["WAITING", "PREPARING"].includes(current.status) && (match.isBotMatch || Boolean(current.playerOId))
       const now = new Date()
-      await tx.x1Match.update({ where: { id: match.id }, data: { preparationStatus: "READY", preparedCount: selected.length, preparationLockedAt: null, preparationError: null, ...(canStart ? { status: "PLAYING", currentTurnUserId: match.playerXId, startedAt: match.startedAt ?? now, turnStartedAt: now } : {}) } })
+      await tx.x1Match.update({ where: { id: match.id }, data: { preparationStatus: "READY", preparedCount: selected.length, preparationLockedAt: null, preparationError: null, ...(canStart ? { status: "PLAYING", currentTurnUserId: match.playerXId, startedAt: current.startedAt ?? now, turnStartedAt: now } : {}) } })
     })
   } catch (error) {
     const message = error instanceof QuestionGenerationUnavailable ? `${error.message} Escolha outro tema ou dificuldade.` : error instanceof Error ? error.message : "Não foi possível preparar as perguntas."

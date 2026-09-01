@@ -66,11 +66,6 @@ async function playBotTurn(code: string) {
   }, { isolationLevel: "Serializable" })
 }
 
-export async function listSubjects() {
-  const rows = await prisma.x1Question.findMany({ where: { active: true }, distinct: ["subject"], select: { subject: true }, orderBy: { subject: "asc" } })
-  return rows.map((row) => row.subject)
-}
-
 export async function findActiveMatchCode(userId: string) {
   const match = await prisma.x1Match.findFirst({
     where: { OR: [{ playerXId: userId }, { playerOId: userId }], status: { in: ["WAITING", "PREPARING", "PLAYING"] } },
@@ -104,7 +99,7 @@ export async function joinRoom(rawCode: string, userId: string) {
     if (match.status !== "WAITING" || match.playerOId) throw new X1Error("A sala já está cheia.")
     const ready = match.preparationStatus === "READY"
     const now = new Date()
-    const changed = await tx.x1Match.updateMany({ where: { id: match.id, status: "WAITING", playerOId: null }, data: { playerOId: userId, status: ready ? "PLAYING" : "PREPARING", currentTurnUserId: ready ? match.playerXId : null, startedAt: ready ? now : null, turnStartedAt: ready ? now : null } })
+    const changed = await tx.x1Match.updateMany({ where: { id: match.id, status: "WAITING", playerOId: null }, data: { playerOId: userId, playerOSubject: match.playerXSubject, status: ready ? "PLAYING" : "PREPARING", currentTurnUserId: ready ? match.playerXId : null, startedAt: ready ? now : null, turnStartedAt: ready ? now : null } })
     if (changed.count !== 1) throw new X1Error("Outro jogador entrou primeiro.")
     return { code }
   }, { isolationLevel: "Serializable" })
@@ -112,6 +107,15 @@ export async function joinRoom(rawCode: string, userId: string) {
 
 export async function getPublicMatch(rawCode: string, userId: string): Promise<X1PublicMatch> {
   const code = normalizeRoomCode(rawCode)
+  const now = new Date()
+  const readyMatch = await prisma.x1Match.findFirst({
+    where: { code, status: "PREPARING", preparationStatus: "READY", playerOId: { not: null }, currentTurnUserId: null },
+    select: { id: true, playerXId: true, startedAt: true },
+  })
+  if (readyMatch) await prisma.x1Match.updateMany({
+    where: { id: readyMatch.id, status: "PREPARING", preparationStatus: "READY", currentTurnUserId: null },
+    data: { status: "PLAYING", currentTurnUserId: readyMatch.playerXId, startedAt: readyMatch.startedAt ?? now, turnStartedAt: now },
+  })
   await advanceExpiredTurn(code)
   await playBotTurn(code)
   const match = await prisma.x1Match.findUnique({
@@ -123,20 +127,7 @@ export async function getPublicMatch(rawCode: string, userId: string): Promise<X
   const turnEndsAt = match.turnTimeSeconds && match.turnStartedAt ? new Date(match.turnStartedAt.getTime() + match.turnTimeSeconds * 1000).toISOString() : null
   const botPlayer = match.isBotMatch ? { id: BOT_ID, name: "Ritimu Bot", image: null } : null
   const botWon = match.isBotMatch && match.status === "FINISHED" && !match.winner && match.roundWinsO >= winsRequired(match.totalRounds)
-  return { code: match.code, status: match.status, board: asBoard(match.board), playerX: match.playerX, playerO: match.playerO ?? botPlayer, playerXSubject: match.playerXSubject, playerOSubject: match.isBotMatch ? null : match.playerOSubject, currentTurnUserId: match.currentTurnUserId, turnTimeSeconds: match.turnTimeSeconds, allowCapture: match.allowCapture, captureLimit: match.captureLimit, capturesX: match.capturesX, capturesO: match.capturesO, totalRounds: match.totalRounds, currentRound: match.currentRound, roundWinsX: match.roundWinsX, roundWinsO: match.roundWinsO, isBotMatch: match.isBotMatch, botDifficulty: match.botDifficulty, topic: match.topic, subtopic: match.subtopic, questionDifficulty: match.questionDifficulty, preparationStatus: match.preparationStatus, preparedCount: match.preparedCount, requiredCount: match.requiredCount, preparationError: match.preparationError, turnEndsAt, winner: botWon ? botPlayer : match.winner, activeQuestion: maySeeQuestion ? { id: match.currentQuestion!.id, subject: match.currentQuestion!.subject, question: match.currentQuestion!.question, options: match.currentQuestion!.options as string[], cell: match.currentCell! } : null, moves: match.moves, startedAt: match.startedAt?.toISOString() ?? null, finishedAt: match.finishedAt?.toISOString() ?? null }
-}
-
-export async function chooseSubject(rawCode: string, userId: string, subject: string) {
-  if (!await prisma.x1Question.findFirst({ where: { subject, active: true }, select: { id: true } })) throw new X1Error("Matéria inválida.", 400)
-  return prisma.$transaction(async (tx) => {
-    const match = await tx.x1Match.findUnique({ where: { code: normalizeRoomCode(rawCode) } })
-    if (!match || (match.playerXId !== userId && match.playerOId !== userId)) throw new X1Error("Sala não encontrada.", 404)
-    if (match.status !== "PREPARING") throw new X1Error("A escolha de matérias foi encerrada.")
-    if (match.topicId) throw new X1Error("O tema desta sala já foi configurado.", 400)
-    await tx.x1Match.update({ where: { id: match.id }, data: match.playerXId === userId ? { playerXSubject: subject } : { playerOSubject: subject } })
-    const ready = await tx.x1Match.findUniqueOrThrow({ where: { id: match.id } })
-    if (ready.playerXSubject && ready.playerOSubject) { const now = new Date(); await tx.x1Match.updateMany({ where: { id: match.id, status: "PREPARING" }, data: { status: "PLAYING", currentTurnUserId: ready.playerXId, startedAt: now, turnStartedAt: now } }) }
-  }, { isolationLevel: "Serializable" })
+  return { code: match.code, status: match.status, board: asBoard(match.board), playerX: match.playerX, playerO: match.playerO ?? botPlayer, playerXSubject: match.playerXSubject, playerOSubject: match.isBotMatch ? null : match.playerOSubject ?? match.playerXSubject, currentTurnUserId: match.currentTurnUserId, turnTimeSeconds: match.turnTimeSeconds, allowCapture: match.allowCapture, captureLimit: match.captureLimit, capturesX: match.capturesX, capturesO: match.capturesO, totalRounds: match.totalRounds, currentRound: match.currentRound, roundWinsX: match.roundWinsX, roundWinsO: match.roundWinsO, isBotMatch: match.isBotMatch, botDifficulty: match.botDifficulty, topic: match.topic, subtopic: match.subtopic, questionDifficulty: match.questionDifficulty, preparationStatus: match.preparationStatus, preparedCount: match.preparedCount, requiredCount: match.requiredCount, preparationError: match.preparationError, turnEndsAt, winner: botWon ? botPlayer : match.winner, activeQuestion: maySeeQuestion ? { id: match.currentQuestion!.id, subject: match.currentQuestion!.subject, question: match.currentQuestion!.question, options: match.currentQuestion!.options as string[], cell: match.currentCell! } : null, moves: match.moves, startedAt: match.startedAt?.toISOString() ?? null, finishedAt: match.finishedAt?.toISOString() ?? null }
 }
 
 export async function selectCell(rawCode: string, userId: string, cell: number) {
