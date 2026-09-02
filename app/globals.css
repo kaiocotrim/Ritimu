@@ -157,6 +157,40 @@
   }
 }
 
+@media (pointer: fine) {
+  html,
+  body {
+    cursor: url("/cursors/codedex-cursor.png") 0 0, auto !important;
+  }
+
+  a[href],
+  button:not(:disabled),
+  select:not(:disabled),
+  summary,
+  label[for],
+  label:has(input:not(:disabled)),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  input[type="range"]:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [data-clickable="true"],
+  [onclick],
+  [style*="cursor: pointer"],
+  [style*="cursor:pointer"],
+  .cursor-pointer {
+    cursor: url("/cursors/codedex-pointer.png") 14 0, pointer !important;
+  }
+
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  [aria-disabled="true"],
+  .cursor-not-allowed {
+    cursor: not-allowed !important;
+  }
+}
+
 html.dark body {
   background: #08090d;
 }

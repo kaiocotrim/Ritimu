@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Eye, EyeOff, LoaderCircle, Lock, Mail, X } from "lucide-react"
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Eye, EyeOff, LoaderCircle, Lock, Mail, UserRound, X } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { authClient } from "@/lib/auth-client"
 import { LoginMascot } from "@/components/auth/login-mascot"
@@ -20,6 +20,8 @@ const gallery = [
 export default function Login() {
   const router = useRouter(), reduceMotion = useReducedMotion()
   const successAudioRef = useRef<HTMLAudioElement>(null)
+  const [mode, setMode] = useState<"login" | "signup">("login")
+  const [name, setName] = useState(""), [confirmPassword, setConfirmPassword] = useState("")
   const [email, setEmail] = useState(""), [password, setPassword] = useState("")
   const [remember, setRemember] = useState(true), [showPass, setShowPass] = useState(false)
   const [passwordFocused, setPasswordFocused] = useState(false)
@@ -30,12 +32,14 @@ export default function Login() {
 
   useEffect(() => {
     let active = true
+    const requestedMode = new URLSearchParams(window.location.search).get("mode")
     void authClient.getSession().then(({ data }) => {
       if (!active) return
       if (data?.session) {
         router.replace("/dashboard")
         return
       }
+      if (requestedMode === "signup") setMode("signup")
       setCheckingSession(false)
     }).catch(() => {
       if (active) setCheckingSession(false)
@@ -53,25 +57,56 @@ export default function Login() {
   const previousSlide = () => setSlide(index => (index - 1 + gallery.length) % gallery.length)
   const nextSlide = () => setSlide(index => (index + 1) % gallery.length)
 
+  function changeMode(nextMode: "login" | "signup") {
+    setMode(nextMode)
+    setError("")
+    setPassword("")
+    setConfirmPassword("")
+    setShowPass(false)
+    window.history.replaceState(null, "", nextMode === "signup" ? "/login?mode=signup" : "/login")
+  }
+
+  async function finishAuthentication() {
+    setLoginSucceeded(true)
+    window.requestAnimationFrame(() => {
+      const audio = successAudioRef.current
+      if (!audio) return
+      audio.currentTime = 0
+      audio.volume = 0.55
+      void audio.play().catch(() => undefined)
+    })
+    await new Promise((resolve) => window.setTimeout(resolve, reduceMotion ? 500 : 2800))
+    router.replace("/dashboard")
+    router.refresh()
+  }
+
   async function login(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setLoading(true); setError("")
     try {
       const result = await authClient.signIn.email({ email, password, rememberMe: remember })
       if (result.error) return setError("E-mail ou senha inválidos.")
-      setLoginSucceeded(true)
-      window.requestAnimationFrame(() => {
-        const audio = successAudioRef.current
-        if (!audio) return
-        audio.currentTime = 0
-        audio.volume = 0.55
-        void audio.play().catch(() => undefined)
-      })
-      await new Promise((resolve) => window.setTimeout(resolve, reduceMotion ? 500 : 2800))
-      router.replace("/dashboard")
-      router.refresh()
+      await finishAuthentication()
     }
     catch { setError("Não foi possível entrar. Tente novamente.") }
     finally { setLoading(false) }
+  }
+
+  async function signup(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError("")
+    if (name.trim().length < 2) return setError("Informe seu nome completo.")
+    if (password.length < 8) return setError("A senha precisa ter pelo menos 8 caracteres.")
+    if (password !== confirmPassword) return setError("As senhas não coincidem.")
+    setLoading(true)
+    try {
+      const result = await authClient.signUp.email({ name: name.trim(), email, password })
+      if (result.error) return setError("Não foi possível criar a conta. Verifique se o e-mail já está em uso.")
+      await finishAuthentication()
+    } catch {
+      setError("Não foi possível criar sua conta. Tente novamente.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (checkingSession) return <main className="grid min-h-screen place-items-center bg-white text-[#111827]" aria-live="polite"><div className="flex items-center gap-3 text-sm font-medium text-black/50"><LoaderCircle className="size-5 animate-spin text-[#1887f2]" />Verificando sua sessão...</div></main>
@@ -135,26 +170,30 @@ export default function Login() {
               aria-live="polite"
             >
               <FaceID className="size-32" loop={false} />
-              <h1 className="mt-5 text-2xl font-semibold tracking-[-.025em]">Login reconhecido</h1>
+              <h1 className="mt-5 text-2xl font-semibold tracking-[-.025em]">{mode === "signup" ? "Conta criada" : "Login reconhecido"}</h1>
               <p className="mt-2 text-sm text-black/45">Preparando sua jornada…</p>
             </motion.div>
           ) : (
             <motion.div
-              key="login-form"
+              key={mode}
+              initial={reduceMotion ? false : { opacity: 0, x: mode === "signup" ? 18 : -18 }}
+              animate={{ opacity: 1, x: 0 }}
               exit={reduceMotion ? undefined : { opacity: 0, y: -14, scale: 0.98, filter: "blur(8px)" }}
               transition={{ duration: 0.32 }}
             >
               <header className="mb-9 text-center">
                 <div className="mx-auto mb-6 lg:hidden"><Image src="/logoDoIcone.png" alt="Ritimo" width={72} height={72} className="mx-auto size-18 rounded-2xl object-cover shadow-lg" /></div>
-                <h1 className="text-3xl font-semibold tracking-[-.025em]">Bem-vindo de volta</h1>
-                <p className="mt-2 text-black/45">Entre para continuar sua jornada.</p>
+                <h1 className="text-3xl font-semibold tracking-[-.025em]">{mode === "signup" ? "Crie sua conta" : "Bem-vindo de volta"}</h1>
+                <p className="mt-2 text-black/45">{mode === "signup" ? "Comece agora sua jornada de estudos." : "Entre para continuar sua jornada."}</p>
               </header>
-              <form onSubmit={login} className="space-y-5">
+              <form onSubmit={mode === "signup" ? signup : login} className="space-y-5">
+                {mode === "signup" && <Field label="Nome"><UserRound className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35"/><input required type="text" autoComplete="name" minLength={2} value={name} onChange={e=>{setName(e.target.value);setError("")}} placeholder="Seu nome" className="h-16 w-full rounded-2xl border border-black/[.08] bg-[#f5f5f7] pl-12 pr-4 outline-none transition placeholder:text-black/30 focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10"/></Field>}
                 <Field label="E-mail"><Mail className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35"/><input required type="email" autoComplete="email" value={email} onChange={e=>{setEmail(e.target.value);setError("")}} placeholder="seu@email.com" className="h-16 w-full rounded-2xl border border-black/[.08] bg-[#f5f5f7] pl-12 pr-4 outline-none transition placeholder:text-black/30 focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10"/></Field>
-                <Field label="Senha"><Lock className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35"/><input required type={showPass?"text":"password"} autoComplete="current-password" value={password} onFocus={()=>setPasswordFocused(true)} onBlur={()=>setPasswordFocused(false)} onChange={e=>{setPassword(e.target.value);setError("")}} placeholder="••••••••" className="h-16 w-full rounded-2xl border border-black/[.08] bg-[#f5f5f7] px-12 outline-none transition placeholder:text-black/30 focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10"/><button type="button" onClick={()=>setShowPass(v=>!v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/35">{showPass?<EyeOff className="size-5"/>:<Eye className="size-5"/>}</button></Field>
-                <div className="flex justify-between gap-4"><button type="button" onClick={()=>setRemember(v=>!v)} className="flex items-center gap-2 text-sm text-black/55"><span className={`grid size-5 place-items-center rounded-md ${remember?"bg-[#1887f2] text-white":"border border-black/20"}`}>{remember&&<Check className="size-3"/>}</span>Lembrar de mim</button><Link href="/esqueci-senha" className="text-sm font-medium text-[#1887f2]">Esqueci minha senha</Link></div>
-                {error&&<motion.p initial={{opacity:0}} animate={{opacity:1}} className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</motion.p>}
-                <motion.button type="submit" whileHover={reduceMotion?undefined:{y:-2}} disabled={loading} className="flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#111827] font-semibold text-white shadow-lg transition hover:bg-black disabled:opacity-60">{loading?<><LoaderCircle className="size-5 animate-spin"/>Entrando...</>:<>Entrar<ArrowRight className="size-5"/></>}</motion.button>
+                <Field label="Senha"><Lock className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35"/><input required minLength={mode === "signup" ? 8 : undefined} type={showPass?"text":"password"} autoComplete={mode === "signup" ? "new-password" : "current-password"} value={password} onFocus={()=>setPasswordFocused(true)} onBlur={()=>setPasswordFocused(false)} onChange={e=>{setPassword(e.target.value);setError("")}} placeholder="••••••••" className="h-16 w-full rounded-2xl border border-black/[.08] bg-[#f5f5f7] px-12 outline-none transition placeholder:text-black/30 focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10"/><button type="button" onClick={()=>setShowPass(v=>!v)} aria-label={showPass ? "Ocultar senha" : "Mostrar senha"} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/35">{showPass?<EyeOff className="size-5"/>:<Eye className="size-5"/>}</button></Field>
+                {mode === "signup" && <Field label="Confirmar senha"><Lock className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35"/><input required minLength={8} type={showPass?"text":"password"} autoComplete="new-password" value={confirmPassword} onChange={e=>{setConfirmPassword(e.target.value);setError("")}} placeholder="••••••••" className="h-16 w-full rounded-2xl border border-black/[.08] bg-[#f5f5f7] pl-12 pr-4 outline-none transition placeholder:text-black/30 focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10"/></Field>}
+                {mode === "login" && <div className="flex justify-between gap-4"><button type="button" onClick={()=>setRemember(v=>!v)} className="flex items-center gap-2 text-sm text-black/55"><span className={`grid size-5 place-items-center rounded-md ${remember?"bg-[#1887f2] text-white":"border border-black/20"}`}>{remember&&<Check className="size-3"/>}</span>Lembrar de mim</button><Link href="/esqueci-senha" className="text-sm font-medium text-[#1887f2]">Esqueci minha senha</Link></div>}
+                {error&&<motion.p role="alert" initial={{opacity:0}} animate={{opacity:1}} className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</motion.p>}
+                <motion.button type="submit" whileHover={reduceMotion?undefined:{y:-2}} disabled={loading} className="flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#111827] font-semibold text-white shadow-lg transition hover:bg-black disabled:opacity-60">{loading?<><LoaderCircle className="size-5 animate-spin"/>{mode === "signup" ? "Criando conta..." : "Entrando..."}</>:<>{mode === "signup" ? "Criar conta" : "Entrar"}<ArrowRight className="size-5"/></>}</motion.button>
               </form>
               <div className="my-7 flex items-center gap-4"><span className="h-px flex-1 bg-black/10"/><span className="text-xs text-black/35">ou continue com</span><span className="h-px flex-1 bg-black/10"/></div>
               <div className="grid grid-cols-3 gap-3">
@@ -162,7 +201,7 @@ export default function Login() {
                 <SocialButton label="Microsoft"><MicrosoftIcon /></SocialButton>
                 <SocialButton label="GitHub"><GitHubIcon /></SocialButton>
               </div>
-              <p className="mt-8 text-center text-sm text-black/40">Ainda não tem uma conta? <Link href="/cadastro" className="font-semibold text-[#1887f2]">Criar conta</Link></p>
+              <p className="mt-8 text-center text-sm text-black/40">{mode === "signup" ? "Já tem uma conta? " : "Ainda não tem uma conta? "}<button type="button" onClick={() => changeMode(mode === "signup" ? "login" : "signup")} className="font-semibold text-[#1887f2] hover:underline">{mode === "signup" ? "Entrar" : "Criar conta"}</button></p>
             </motion.div>
           )}
         </AnimatePresence>

@@ -10,6 +10,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import {
   BookOpen,
+  CalendarDays,
   ChevronRight,
 } from "lucide-react"
 import { auth } from "@/lib/auth"
@@ -61,6 +62,12 @@ export default async function Dashboard() {
     hour: "2-digit",
     minute: "2-digit",
   })
+  const todayLabel = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  }).format(new Date())
   const agenda = todayEvents.slice(0, 2).map((event, index) => ({
     id: event.id,
     time: timeFormatter.format(event.startAt),
@@ -77,6 +84,11 @@ export default async function Dashboard() {
   return (
     <main className="flex min-h-screen items-center bg-[#F6F5F1] px-6 pb-32 pt-8 text-[#111111] sm:px-10 lg:px-16">
       <div className="mx-auto w-full max-w-6xl">
+        <div className="mb-5 flex items-center gap-2 text-sm font-medium text-black/55 sm:text-base">
+          <CalendarDays className="size-4 text-[#45B950]" aria-hidden="true" />
+          <time className="first-letter:uppercase">{todayLabel}</time>
+        </div>
+
         {/* Integrations banner */}
 
 
