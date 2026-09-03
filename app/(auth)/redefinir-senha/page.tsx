@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { ArrowLeft, CheckCircle2, Eye, EyeOff, Lock } from "lucide-react"
+import { ArrowLeft, Check, CheckCircle2, Eye, EyeOff, Lock } from "lucide-react"
+import { AnimatePresence, motion } from "motion/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { authClient } from "@/lib/auth-client"
@@ -46,7 +47,8 @@ export default function ResetPasswordPage() {
           {success ? <><CheckCircle2 className="mx-auto mb-3 size-9 text-[#22a05a]" /><h1 className="text-2xl font-semibold">Senha alterada</h1><p className="mt-2 text-sm text-black/50">Redirecionando para o login...</p></> : <><h1 className="text-2xl font-semibold">Criar nova senha</h1><p className="mt-2 text-sm text-black/50">Escolha uma senha com pelo menos 8 caracteres.</p></>}
         </div>
         {!success && <form onSubmit={handleSubmit} className="space-y-4">
-          <label className="block text-xs font-semibold">Nova senha<span className="relative mt-1.5 block"><Lock className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35" /><input required minLength={8} type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} className="h-12 w-full rounded-xl border border-black/[.08] bg-[#f5f5f7] px-12 outline-none transition focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10" /></span></label>
+          <label className="block text-xs font-semibold">Nova senha<span className="relative mt-1.5 block"><Lock className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35" /><input required minLength={8} type={showPassword ? "text" : "password"} value={password} onChange={(event) => { setPassword(event.target.value); setError("") }} className="h-12 w-full rounded-xl border border-black/[.08] bg-[#f5f5f7] px-12 outline-none transition focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10" /></span></label>
+          <PasswordStrength password={password} />
           <label className="block text-xs font-semibold">Confirmar senha<span className="relative mt-1.5 block"><Lock className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35" /><input required minLength={8} type={showPassword ? "text" : "password"} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className="h-12 w-full rounded-xl border border-black/[.08] bg-[#f5f5f7] px-12 outline-none transition focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10" /><button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/35">{showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}</button></span></label>
           {error && <p role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</p>}
           <button disabled={loading || !token} type="submit" className="h-11 w-full rounded-full bg-[#111827] text-sm font-semibold text-white shadow-lg transition hover:bg-black disabled:opacity-60">{loading ? "Salvando..." : "Salvar nova senha"}</button>
@@ -54,4 +56,27 @@ export default function ResetPasswordPage() {
       </section>
     </main>
   )
+}
+
+function PasswordStrength({ password }: { password: string }) {
+  const checks = [
+    { label: "8+ caracteres", met: password.length >= 8 },
+    { label: "Maiúscula e minúscula", met: /[a-z]/.test(password) && /[A-Z]/.test(password) },
+    { label: "Um número", met: /\d/.test(password) },
+    { label: "Um símbolo", met: /[^A-Za-z0-9]/.test(password) },
+  ]
+  const score = checks.filter((check) => check.met).length
+  const strength = score >= 4
+    ? { label: "Forte", color: "#22c55e", bars: 3 }
+    : score >= 2
+      ? { label: "Média", color: "#f59e0b", bars: 2 }
+      : { label: "Fraca", color: "#ef4444", bars: 1 }
+
+  return <AnimatePresence initial={false}>
+    {password && <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="-mt-2 overflow-hidden" aria-live="polite">
+      <div className="flex items-center justify-between text-[11px] font-semibold"><span className="text-black/40">Força da senha</span><span style={{ color: strength.color }}>{strength.label}</span></div>
+      <div className="mt-1 grid grid-cols-3 gap-1.5" aria-hidden="true">{[1, 2, 3].map((bar) => <motion.span key={bar} className="h-1 rounded-full bg-black/10" animate={{ backgroundColor: bar <= strength.bars ? strength.color : "rgba(17, 24, 39, 0.10)" }} />)}</div>
+      <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1">{checks.map((check) => <span key={check.label} className={`flex min-w-0 items-center gap-1 text-[10px] ${check.met ? "text-[#168f3e]" : "text-black/35"}`}><span className={`grid size-3 shrink-0 place-items-center rounded-full ${check.met ? "bg-[#22c55e] text-white" : "border border-black/15"}`}>{check.met && <Check className="size-2" />}</span>{check.label}</span>)}</div>
+    </motion.div>}
+  </AnimatePresence>
 }
