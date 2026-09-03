@@ -17,6 +17,12 @@ const gallery = [
   { src: "/bannerLogin/img%20(4).png", title: "Cada passo leva você mais longe" },
 ]
 
+const strengthStyles = {
+  weak: { label: "Fraca", color: "#ef4444", bars: 1 },
+  medium: { label: "Média", color: "#f59e0b", bars: 2 },
+  strong: { label: "Forte", color: "#22c55e", bars: 3 },
+} as const
+
 export default function Login() {
   const router = useRouter(), reduceMotion = useReducedMotion()
   const successAudioRef = useRef<HTMLAudioElement>(null)
@@ -115,31 +121,31 @@ export default function Login() {
     <audio ref={successAudioRef} src="/sounds/login-success.mp3" preload="auto" />
     <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(circle_at_28%_44%,#f1f7ea_0%,#fafafa_38%,#ffffff_72%)]" />
     <LoginMascot passwordState={passwordFocused ? (password ? "typing" : "focused") : "idle"} />
-    <div className={`relative mx-auto grid min-h-screen max-w-[1180px] items-center justify-center gap-14 px-5 py-10 sm:px-8 lg:gap-12 lg:px-12 xl:gap-14 ${loginSucceeded ? "lg:grid-cols-1" : "lg:grid-cols-[minmax(0,530px)_minmax(0,450px)]"}`}>
+    <div className={`relative mx-auto grid min-h-screen max-w-4xl items-center justify-center gap-10 px-5 py-8 sm:px-8 lg:gap-10 lg:px-8 ${loginSucceeded ? "lg:grid-cols-1" : "lg:grid-cols-[minmax(0,400px)_minmax(0,340px)]"}`}>
       <AnimatePresence initial={false} mode="popLayout">
       {!loginSucceeded && <motion.section
         key="login-showcase"
-        className="relative hidden min-h-[680px] lg:flex lg:flex-col"
+        className="relative hidden min-h-[530px] lg:flex lg:flex-col"
         exit={reduceMotion ? undefined : { opacity: 0, x: -56, scale: 0.97, filter: "blur(10px)" }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       >
         <Link href="/" className="inline-flex w-fit items-center gap-1 text-sm font-medium text-[#1887f2] transition hover:opacity-70"><ChevronLeft className="size-5"/>Voltar</Link>
         <div className="my-auto">
           <div className="mb-6">
-            <p className="text-sm font-semibold uppercase tracking-[.16em] text-black/35">Seu ritmo de estudos</p>
-            <h2 className="mt-2 flex items-center gap-3 text-4xl font-semibold tracking-[-.035em] text-[#111827]">
+            <p className="text-xs font-semibold uppercase tracking-[.16em] text-black/35">Seu ritmo de estudos</p>
+            <h2 className="mt-2 flex items-center gap-2 text-2xl font-semibold text-[#111827] xl:text-3xl">
               Estude. Foque. Evolua.
-              <Image src="/rocket_1f680.png" alt="Foguete" width={42} height={42} className="size-10 shrink-0 object-contain" />
+              <Image src="/rocket_1f680.png" alt="Foguete" width={32} height={32} className="size-8 shrink-0 object-contain xl:size-9" />
             </h2>
-            <p className="mt-2 text-lg text-black/45">Gamifique seu aprendizado.</p>
+            <p className="mt-1 text-sm text-black/45">Gamifique seu aprendizado.</p>
           </div>
           <div className="relative aspect-[3/2] w-full overflow-hidden rounded-[32px] border border-black/[.06] bg-[#060a20] shadow-[0_28px_70px_rgba(15,23,42,.16)]">
             <Image src="/bannerLogin.png" alt="Cenário espacial do Ritimo" fill sizes="(min-width: 1024px) 55vw, 0px" className="object-cover object-center [image-rendering:pixelated]" preload />
             <div className="absolute inset-0 bg-gradient-to-t from-[#020617]/90 via-transparent to-transparent" />
             <div className="absolute bottom-24 left-6 right-6 text-white">
-              <p className="text-xs font-bold uppercase tracking-[.12em] text-[#b6f238]">Aprenda no seu ritmo</p>
-              <h3 className="mt-2 text-3xl font-semibold tracking-[-.035em]">Transforme estudo em evolução</h3>
-              <p className="mt-2 text-sm text-white/70">Organize sua rotina, cumpra missões e acompanhe seu progresso.</p>
+              <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#b6f238]">Aprenda no seu ritmo</p>
+              <h3 className="mt-1.5 text-xl font-semibold leading-tight xl:text-2xl">Transforme estudo em evolução</h3>
+              <p className="mt-1.5 text-xs leading-relaxed text-white/70">Organize sua rotina, cumpra missões e acompanhe seu progresso.</p>
             </div>
             <div className="absolute inset-x-0 bottom-0 flex h-20 items-center justify-between border-t border-white/10 bg-[#07150f]/90 px-5 backdrop-blur-xl">
               <div className="flex min-w-0 items-center gap-3">
@@ -150,15 +156,15 @@ export default function Login() {
             </div>
           </div>
         </div>
-        <p className="text-sm text-black/35">Uma experiência simples para transformar rotina em progresso.</p>
+        <p className="text-xs leading-relaxed text-black/35">Uma experiência simples para transformar rotina em progresso.</p>
       </motion.section>}
       </AnimatePresence>
       <motion.div
         layout
-        className={`relative w-full max-w-xl lg:-translate-y-3 ${loginSucceeded ? "justify-self-center" : "justify-self-end"}`}
+        className={`relative w-full ${mode === "signup" ? "max-w-[360px]" : "max-w-[340px]"} ${loginSucceeded ? "justify-self-center" : "justify-self-end"}`}
         transition={{ layout: { duration: 0.65, ease: [0.22, 1, 0.36, 1] } }}
       >
-        <motion.section initial={reduceMotion ? false : { opacity:0,y:22,scale:.98 }} animate={{ opacity:1,y:0,scale:1 }} transition={{ duration:.65,ease:[.22,1,.36,1] }} className="relative z-10 w-full rounded-[32px] border border-black/[.07] bg-white/90 p-6 text-[#111827] shadow-[0_28px_80px_rgba(15,23,42,.10)] backdrop-blur-xl sm:p-10 lg:p-12">
+        <motion.section initial={reduceMotion ? false : { opacity:0,y:22,scale:.98 }} animate={{ opacity:1,y:0,scale:1 }} transition={{ duration:.65,ease:[.22,1,.36,1] }} className={`relative z-10 w-full border border-black/[.07] bg-white/90 text-[#111827] shadow-[0_24px_65px_rgba(15,23,42,.10)] backdrop-blur-xl ${mode === "signup" ? "rounded-2xl p-4 sm:p-5" : "rounded-3xl p-6 sm:p-8"}`}>
         <AnimatePresence mode="wait" initial={false}>
           {loginSucceeded ? (
             <motion.div
@@ -181,27 +187,28 @@ export default function Login() {
               exit={reduceMotion ? undefined : { opacity: 0, y: -14, scale: 0.98, filter: "blur(8px)" }}
               transition={{ duration: 0.32 }}
             >
-              <header className="mb-9 text-center">
-                <div className="mx-auto mb-6 lg:hidden"><Image src="/logoDoIcone.png" alt="Ritimo" width={72} height={72} className="mx-auto size-18 rounded-2xl object-cover shadow-lg" /></div>
-                <h1 className="text-3xl font-semibold tracking-[-.025em]">{mode === "signup" ? "Crie sua conta" : "Bem-vindo de volta"}</h1>
-                <p className="mt-2 text-black/45">{mode === "signup" ? "Comece agora sua jornada de estudos." : "Entre para continuar sua jornada."}</p>
+              <header className={`${mode === "signup" ? "mb-3" : "mb-6"} text-center`}>
+                <div className={`mx-auto lg:hidden ${mode === "signup" ? "mb-2" : "mb-6"}`}><Image src="/logoDoIcone.png" alt="Ritimo" width={72} height={72} className={`mx-auto object-cover shadow-lg ${mode === "signup" ? "size-11 rounded-xl" : "size-18 rounded-2xl"}`} /></div>
+                <h1 className="text-xl font-semibold">{mode === "signup" ? "Crie sua conta" : "Bem-vindo de volta"}</h1>
+                <p className={`${mode === "signup" ? "mt-0.5" : "mt-1"} text-xs text-black/45`}>{mode === "signup" ? "Comece agora sua jornada de estudos." : "Entre para continuar sua jornada."}</p>
               </header>
-              <form onSubmit={mode === "signup" ? signup : login} className="space-y-5">
+              <form onSubmit={mode === "signup" ? signup : login} className={mode === "signup" ? "space-y-2.5 [&_input]:h-10 [&_input]:rounded-lg [&>label]:text-[11px] [&>label>span]:mt-1" : "space-y-4 [&_input]:h-12 [&_input]:rounded-xl [&>label]:text-xs [&>label>span]:mt-1.5"}>
                 {mode === "signup" && <Field label="Nome"><UserRound className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35"/><input required type="text" autoComplete="name" minLength={2} value={name} onChange={e=>{setName(e.target.value);setError("")}} placeholder="Seu nome" className="h-16 w-full rounded-2xl border border-black/[.08] bg-[#f5f5f7] pl-12 pr-4 outline-none transition placeholder:text-black/30 focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10"/></Field>}
                 <Field label="E-mail"><Mail className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35"/><input required type="email" autoComplete="email" value={email} onChange={e=>{setEmail(e.target.value);setError("")}} placeholder="seu@email.com" className="h-16 w-full rounded-2xl border border-black/[.08] bg-[#f5f5f7] pl-12 pr-4 outline-none transition placeholder:text-black/30 focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10"/></Field>
                 <Field label="Senha"><Lock className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35"/><input required minLength={mode === "signup" ? 8 : undefined} type={showPass?"text":"password"} autoComplete={mode === "signup" ? "new-password" : "current-password"} value={password} onFocus={()=>setPasswordFocused(true)} onBlur={()=>setPasswordFocused(false)} onChange={e=>{setPassword(e.target.value);setError("")}} placeholder="••••••••" className="h-16 w-full rounded-2xl border border-black/[.08] bg-[#f5f5f7] px-12 outline-none transition placeholder:text-black/30 focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10"/><button type="button" onClick={()=>setShowPass(v=>!v)} aria-label={showPass ? "Ocultar senha" : "Mostrar senha"} className="absolute right-4 top-1/2 -translate-y-1/2 text-black/35">{showPass?<EyeOff className="size-5"/>:<Eye className="size-5"/>}</button></Field>
+                {mode === "signup" && <PasswordStrength password={password} />}
                 {mode === "signup" && <Field label="Confirmar senha"><Lock className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-black/35"/><input required minLength={8} type={showPass?"text":"password"} autoComplete="new-password" value={confirmPassword} onChange={e=>{setConfirmPassword(e.target.value);setError("")}} placeholder="••••••••" className="h-16 w-full rounded-2xl border border-black/[.08] bg-[#f5f5f7] pl-12 pr-4 outline-none transition placeholder:text-black/30 focus:border-[#1887f2]/45 focus:bg-white focus:ring-4 focus:ring-[#1887f2]/10"/></Field>}
-                {mode === "login" && <div className="flex justify-between gap-4"><button type="button" onClick={()=>setRemember(v=>!v)} className="flex items-center gap-2 text-sm text-black/55"><span className={`grid size-5 place-items-center rounded-md ${remember?"bg-[#1887f2] text-white":"border border-black/20"}`}>{remember&&<Check className="size-3"/>}</span>Lembrar de mim</button><Link href="/esqueci-senha" className="text-sm font-medium text-[#1887f2]">Esqueci minha senha</Link></div>}
+                {mode === "login" && <div className="flex items-center justify-between gap-2 text-[11px]"><button type="button" onClick={()=>setRemember(v=>!v)} className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-black/55"><span className={`grid size-4 place-items-center rounded ${remember?"bg-[#1887f2] text-white":"border border-black/20"}`}>{remember&&<Check className="size-2.5"/>}</span>Lembrar de mim</button><Link href="/esqueci-senha" className="shrink-0 whitespace-nowrap font-medium text-[#1887f2]">Esqueci minha senha</Link></div>}
                 {error&&<motion.p role="alert" initial={{opacity:0}} animate={{opacity:1}} className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">{error}</motion.p>}
-                <motion.button type="submit" whileHover={reduceMotion?undefined:{y:-2}} disabled={loading} className="flex h-14 w-full items-center justify-center gap-3 rounded-full bg-[#111827] font-semibold text-white shadow-lg transition hover:bg-black disabled:opacity-60">{loading?<><LoaderCircle className="size-5 animate-spin"/>{mode === "signup" ? "Criando conta..." : "Entrando..."}</>:<>{mode === "signup" ? "Criar conta" : "Entrar"}<ArrowRight className="size-5"/></>}</motion.button>
+                <motion.button type="submit" whileHover={reduceMotion?undefined:{y:-2}} disabled={loading} className={`flex w-full items-center justify-center gap-3 rounded-full bg-[#111827] font-semibold text-white shadow-lg transition hover:bg-black disabled:opacity-60 ${mode === "signup" ? "h-10 text-xs" : "h-11 text-sm"}`}>{loading?<><LoaderCircle className="size-5 animate-spin"/>{mode === "signup" ? "Criando conta..." : "Entrando..."}</>:<>{mode === "signup" ? "Criar conta" : "Entrar"}<ArrowRight className="size-5"/></>}</motion.button>
               </form>
-              <div className="my-7 flex items-center gap-4"><span className="h-px flex-1 bg-black/10"/><span className="text-xs text-black/35">ou continue com</span><span className="h-px flex-1 bg-black/10"/></div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className={`${mode === "signup" ? "my-3.5" : "my-5"} flex items-center gap-4`}><span className="h-px flex-1 bg-black/10"/><span className="text-[10px] text-black/35">ou continue com</span><span className="h-px flex-1 bg-black/10"/></div>
+              <div className={`grid grid-cols-3 gap-2.5 ${mode === "signup" ? "[&_button]:h-10 [&_svg]:size-4" : "[&_button]:h-11 [&_svg]:size-4"}`}>
                 <SocialButton label="Google"><GoogleIcon /></SocialButton>
                 <SocialButton label="Microsoft"><MicrosoftIcon /></SocialButton>
                 <SocialButton label="GitHub"><GitHubIcon /></SocialButton>
               </div>
-              <p className="mt-8 text-center text-sm text-black/40">{mode === "signup" ? "Já tem uma conta? " : "Ainda não tem uma conta? "}<button type="button" onClick={() => changeMode(mode === "signup" ? "login" : "signup")} className="font-semibold text-[#1887f2] hover:underline">{mode === "signup" ? "Entrar" : "Criar conta"}</button></p>
+              <p className={`${mode === "signup" ? "mt-3" : "mt-5"} text-center text-[11px] text-black/40`}>{mode === "signup" ? "Já tem uma conta? " : "Ainda não tem uma conta? "}<button type="button" onClick={() => changeMode(mode === "signup" ? "login" : "signup")} className="font-semibold text-[#1887f2] hover:underline">{mode === "signup" ? "Entrar" : "Criar conta"}</button></p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -228,6 +235,51 @@ export default function Login() {
 }
 
 function Field({label,children}:{label:string;children:ReactNode}) { return <label className="block text-sm font-semibold">{label}<span className="relative mt-2 block">{children}</span></label> }
+
+function PasswordStrength({ password }: { password: string }) {
+  const checks = [
+    { label: "8+ caracteres", met: password.length >= 8 },
+    { label: "Maiúscula e minúscula", met: /[a-z]/.test(password) && /[A-Z]/.test(password) },
+    { label: "Um número", met: /\d/.test(password) },
+    { label: "Um símbolo", met: /[^A-Za-z0-9]/.test(password) },
+  ]
+  const score = checks.filter((check) => check.met).length
+  const level = score >= 4 ? "strong" : score >= 2 ? "medium" : "weak"
+  const strength = strengthStyles[level]
+
+  return <AnimatePresence initial={false}>
+    {password && <motion.div
+      key="password-strength"
+      initial={{ opacity: 0, height: 0, y: -6 }}
+      animate={{ opacity: 1, height: "auto", y: 0 }}
+      exit={{ opacity: 0, height: 0, y: -6 }}
+      className="-mt-2 overflow-hidden"
+      aria-live="polite"
+    >
+      <div className="flex items-center justify-between text-[11px] font-semibold">
+        <span className="text-black/40">Força da senha</span>
+        <motion.span key={level} initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} style={{ color: strength.color }}>{strength.label}</motion.span>
+      </div>
+      <div className="mt-1 grid grid-cols-3 gap-1.5" aria-hidden="true">
+        {[1, 2, 3].map((bar) => <motion.span
+          key={bar}
+          className="h-1 rounded-full bg-black/10"
+          animate={{
+            backgroundColor: bar <= strength.bars ? strength.color : "rgba(17, 24, 39, 0.10)",
+            scaleY: bar <= strength.bars ? [1, 1.45, 1] : 1,
+          }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        />)}
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1">
+        {checks.map((check) => <span key={check.label} className={`flex min-w-0 items-center gap-1 text-[10px] transition-colors ${check.met ? "text-[#168f3e]" : "text-black/35"}`}>
+          <span className={`grid size-3 shrink-0 place-items-center rounded-full transition-colors ${check.met ? "bg-[#22c55e] text-white" : "border border-black/15"}`}>{check.met && <Check className="size-2" />}</span>
+          {check.label}
+        </span>)}
+      </div>
+    </motion.div>}
+  </AnimatePresence>
+}
 
 function SocialButton({ label, children }: { label: string; children: ReactNode }) {
   return <button type="button" aria-label={`Continuar com ${label}`} title={label} className="group grid h-14 place-items-center rounded-2xl border border-black/[.08] bg-[#f5f5f7] text-[#111827] transition duration-200 hover:-translate-y-0.5 hover:border-black/[.12] hover:bg-white hover:shadow-[0_8px_24px_rgba(15,23,42,.10)] active:translate-y-0">{children}</button>

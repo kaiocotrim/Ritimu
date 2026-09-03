@@ -75,7 +75,7 @@ export function LoginMascot({ passwordState = "idle" }: { passwordState?: Passwo
   return (
     <motion.button
       type="button"
-      className="group fixed left-0 top-[18%] z-[2] w-12 cursor-pointer border-0 bg-transparent p-0 will-change-transform focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#1887f2]/25 sm:w-14 lg:w-16"
+      className="group fixed left-0 top-[18%] z-[2] w-7 cursor-pointer border-0 bg-transparent p-0 will-change-transform focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#1887f2]/25 sm:w-9 lg:w-11"
       key={routeIndex}
       initial={reduceMotion ? { x: "82vw", y: 40 } : routes[routeIndex].initial}
       animate={reduceMotion ? { x: "82vw", y: 40 } : routes[routeIndex].animate}
@@ -132,7 +132,7 @@ export function LoginMascot({ passwordState = "idle" }: { passwordState?: Passwo
             src={activeFrame}
             alt=""
             fill
-            sizes="64px"
+            sizes="44px"
             className="object-contain object-center"
             priority={frameIndex === 0}
           />
