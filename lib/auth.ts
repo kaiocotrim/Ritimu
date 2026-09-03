@@ -5,9 +5,17 @@ import { Resend } from "resend"
 import { GOOGLE_RITIMU_SCOPES } from "@/lib/google-classroom"
 import { prisma } from "@/lib/prisma"
 
+const configuredAuthUrl = process.env.BETTER_AUTH_URL?.replace(/\/$/, "")
+const deploymentAuthUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined
+const authBaseUrl = process.env.NODE_ENV === "production" && configuredAuthUrl?.includes("localhost")
+    ? deploymentAuthUrl
+    : configuredAuthUrl || deploymentAuthUrl
+const trustedOrigins = [authBaseUrl, process.env.NEXT_PUBLIC_APP_URL]
+    .filter((origin): origin is string => Boolean(origin))
+
 export const auth = betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL,
-    trustedOrigins: [process.env.BETTER_AUTH_URL].filter((origin): origin is string => Boolean(origin)),
+    baseURL: authBaseUrl,
+    trustedOrigins,
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),

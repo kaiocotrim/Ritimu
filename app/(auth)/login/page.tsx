@@ -90,7 +90,10 @@ export default function Login() {
     event.preventDefault(); setLoading(true); setError("")
     try {
       const result = await authClient.signIn.email({ email, password, rememberMe: remember })
-      if (result.error) return setError("E-mail ou senha inválidos.")
+      if (result.error) {
+        console.error("[auth] sign-in failed", { code: result.error.code, message: result.error.message })
+        return setError("E-mail ou senha inválidos.")
+      }
       await finishAuthentication()
     }
     catch { setError("Não foi possível entrar. Tente novamente.") }
