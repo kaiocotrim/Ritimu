@@ -1,5 +1,6 @@
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
+import Image from "next/image"
 import { Medal, Sparkles, TrendingUp, Trophy } from "lucide-react"
 
 import { AnimatedCard } from "@/components/dashboard/animated-card"
@@ -77,7 +78,16 @@ export default async function RankingPage() {
         </header>
 
         <AnimatedCard delay={0.05} className="relative mb-6 overflow-hidden rounded-3xl bg-black p-6 text-white sm:p-8">
-          <div className="absolute -right-12 -top-20 size-64 rounded-full bg-[#50D05C]/20 blur-3xl" />
+          <Image
+            src="/bannerRAKING.png"
+            alt=""
+            fill
+            sizes="(min-width: 1280px) 1152px, 100vw"
+            className="object-cover object-[center_62%] [image-rendering:pixelated]"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/65 to-black/25" />
+          <div className="absolute -right-12 -top-20 size-64 rounded-full bg-amber-300/15 blur-3xl" />
           <div className="relative flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm text-white/70">
@@ -107,7 +117,9 @@ export default async function RankingPage() {
         </AnimatedCard>
 
         {podiumOrder.length > 0 && (
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="relative mb-6 overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(circle_at_50%_0%,rgba(245,158,11,.09),transparent_38%),linear-gradient(135deg,#091014,#0b0f12_48%,#120e09)] p-4 shadow-[0_22px_60px_rgba(4,20,13,.16)] sm:p-6">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-sky-300/40 via-amber-300/70 to-orange-400/40" />
+            <div className="relative grid grid-cols-1 gap-4 pt-3 sm:grid-cols-3 sm:items-stretch">
             {podiumOrder.map((student) => {
               const position = ranking.findIndex((item) => item.id === student.id) + 1
 
@@ -123,6 +135,7 @@ export default async function RankingPage() {
                 />
               )
             })}
+            </div>
           </div>
         )}
 
