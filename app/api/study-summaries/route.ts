@@ -7,7 +7,7 @@ import type { GoogleClassroomCourseWork, GoogleClassroomCourseWorkMaterial } fro
 import { prisma } from "@/lib/prisma"
 import { generateStudySummary, SummaryServiceError } from "@/lib/knowledge/summary-service"
 
-type Body = { courseId?: string; sourceId?: string; sourceKind?: "coursework" | "material" | "manual"; sourceUrl?: string; title?: string }
+type Body = { courseId?: string; sourceId?: string; sourceKind?: "coursework" | "material" }
 
 export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() })
@@ -26,7 +26,6 @@ export async function POST(request: Request) {
   if (!session) return Response.json({ error: "Não autenticado" }, { status: 401 })
   const body = await request.json().catch(() => null) as Body | null
   if (!body?.courseId || !body.sourceId || !body.sourceKind) return Response.json({ error: "Material inválido" }, { status: 400 })
-  if (body.sourceKind === "manual" && (!body.sourceUrl || !body.title)) return Response.json({ error: "Informe o título e o link direto do material" }, { status: 400 })
 
   const [course, account] = await Promise.all([
     prisma.classroomCourse.findFirst({ where: { id: body.courseId, userId: session.user.id }, select: { id: true, googleCourseId: true } }),
@@ -37,19 +36,14 @@ export async function POST(request: Request) {
 
   try {
     const { accessToken } = await auth.api.getAccessToken({ body: { accountId: account.id }, headers: requestHeaders })
-    let title = body.title
-    let sourceUrl = body.sourceUrl
-    if (body.sourceKind !== "manual") {
-      const endpoint = body.sourceKind === "coursework" ? "courseWork" : "courseWorkMaterials"
-      const response = await fetch(`https://classroom.googleapis.com/v1/courses/${encodeURIComponent(course.googleCourseId)}/${endpoint}/${encodeURIComponent(body.sourceId)}`, { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" })
-      if (!response.ok) return Response.json({ error: "Não foi possível confirmar o material no Google Classroom" }, { status: response.status === 403 ? 403 : 502 })
-      const item = await response.json() as GoogleClassroomCourseWork | GoogleClassroomCourseWorkMaterial
-      const material = item.materials?.find((entry) => entry.link?.url || entry.driveFile?.driveFile?.alternateLink || entry.form?.formUrl || entry.gem?.url || entry.notebook?.url)
-      if (!material) return Response.json({ error: "Este item não possui um arquivo Google compatível com resumo automático" }, { status: 422 })
-      title = item.title
-      sourceUrl = material.link?.url ?? material.driveFile?.driveFile?.alternateLink ?? material.form?.formUrl ?? material.gem?.url ?? material.notebook?.url
-    }
-    const extracted = await extractMaterialContent({ material: { title, url: sourceUrl }, accessToken })
+    const endpoint = body.sourceKind === "coursework" ? "courseWork" : "courseWorkMaterials"
+    const response = await fetch(`https://classroom.googleapis.com/v1/courses/${encodeURIComponent(course.googleCourseId)}/${endpoint}/${encodeURIComponent(body.sourceId)}`, { headers: { Authorization: `Bearer ${accessToken}` }, cache: "no-store" })
+    if (!response.ok) return Response.json({ error: "Não foi possível confirmar o material no Google Classroom" }, { status: response.status === 403 ? 403 : 502 })
+    const item = await response.json() as GoogleClassroomCourseWork | GoogleClassroomCourseWorkMaterial
+    const material = item.materials?.find((entry) => entry.link?.url || entry.driveFile?.driveFile?.alternateLink || entry.form?.formUrl || entry.gem?.url || entry.notebook?.url)
+    if (!material) return Response.json({ error: "Este item não possui um arquivo Google compatível com resumo automático" }, { status: 422 })
+    const sourceUrl = material.link?.url ?? material.driveFile?.driveFile?.alternateLink ?? material.form?.formUrl ?? material.gem?.url ?? material.notebook?.url
+    const extracted = await extractMaterialContent({ material: { title: item.title, url: sourceUrl }, accessToken })
     const contentHash = createHash("sha256").update(extracted.text).digest("hex")
     const existing = await prisma.studySummary.findUnique({ where: { userId_courseId_sourceId: { userId: session.user.id, courseId: course.id, sourceId: body.sourceId } }, select: { id: true, contentHash: true, content: true, title: true, sourceType: true, sourceUrl: true, updatedAt: true } })
     if (existing?.contentHash === contentHash) return Response.json({ summary: existing, reused: true })
