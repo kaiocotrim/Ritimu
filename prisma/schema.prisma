@@ -28,7 +28,6 @@ model User {
   studySubjectPreferences     StudySubjectPreference[]
   studyPlans                  StudyPlan[]
   studyContents               StudyContent[]
-  studySummaries              StudySummary[]
   xpTransactions              XpTransaction[]
   x1MatchesAsX                X1Match[]                    @relation("X1PlayerX")
   x1MatchesAsO                X1Match[]                    @relation("X1PlayerO")
@@ -276,7 +275,6 @@ model ClassroomCourse {
   studyPreferences StudySubjectPreference[]
   studySessions    StudySession[]
   studyContents    StudyContent[]
-  studySummaries   StudySummary[]
   totalItems       Int                       @default(0)
 
   createdAt DateTime @default(now())
@@ -474,25 +472,6 @@ model StudyContent {
 
   @@index([userId, studied])
   @@index([courseId])
-}
-
-model StudySummary {
-  id          String          @id @default(cuid())
-  userId      String
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courseId    String
-  course      ClassroomCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  sourceType  String
-  sourceId    String
-  sourceUrl   String?
-  title       String
-  content     Json
-  contentHash String
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-
-  @@unique([userId, courseId, sourceId])
-  @@index([userId, courseId])
 }
 
 enum CalendarEventSource {

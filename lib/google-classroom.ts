@@ -5,19 +5,12 @@ export const GOOGLE_CLASSROOM_SCOPES = [
   "https://www.googleapis.com/auth/classroom.topics.readonly",
 ] as const
 
-export const GOOGLE_DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly" as const
-export const GOOGLE_SLIDES_SCOPE = "https://www.googleapis.com/auth/presentations.readonly" as const
-export const GOOGLE_DOCS_SCOPE = "https://www.googleapis.com/auth/documents.readonly" as const
-
 export const GOOGLE_CALENDAR_SCOPE =
   "https://www.googleapis.com/auth/calendar.events" as const
 
 export const GOOGLE_RITIMU_SCOPES = [
   ...GOOGLE_CLASSROOM_SCOPES,
   GOOGLE_CALENDAR_SCOPE,
-  GOOGLE_DRIVE_SCOPE,
-  GOOGLE_SLIDES_SCOPE,
-  GOOGLE_DOCS_SCOPE,
 ] as const
 
 export type GoogleClassroomTopic = {
