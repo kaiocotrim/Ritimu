@@ -6,6 +6,8 @@ import { GOOGLE_RITIMU_SCOPES } from "@/lib/google-classroom"
 import { prisma } from "@/lib/prisma"
 
 export const auth = betterAuth({
+    baseURL: process.env.BETTER_AUTH_URL,
+    trustedOrigins: [process.env.BETTER_AUTH_URL].filter((origin): origin is string => Boolean(origin)),
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
