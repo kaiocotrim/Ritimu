@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation"
 
 import { CompletionCheckbox } from "@/components/classroom/completion-checkbox"
 import { ManualCourseWorkspace } from "@/components/classroom/manual-course-workspace"
+import { StudySummaries } from "@/components/classroom/study-summaries"
 import { auth } from "@/lib/auth"
 import {
   getAssignmentUrl,
@@ -294,6 +295,13 @@ export default async function DisciplinaPage({
           )}
           </>}
         </section>
+        {!isManualCourse && !integrationError && <StudySummaries
+          courseId={course.id}
+          items={[
+            ...assignments.filter((assignment) => Boolean(assignment.materials?.length)).map((assignment) => ({ id: assignment.id, title: assignment.title, kind: "coursework" as const })),
+            ...courseMaterials.filter((material) => Boolean(material.materials?.length)).map((material) => ({ id: material.id, title: material.title, kind: "material" as const })),
+          ]}
+        />}
       </div>
     </main>
   )
