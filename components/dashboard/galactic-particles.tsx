@@ -32,8 +32,12 @@ export function GalacticParticles({ alwaysVisible = false }: { alwaysVisible?: b
       transition={alwaysVisible ? { duration: 1.1, delay: 0.35, ease: "easeOut" } : undefined}
       aria-hidden="true"
     >
-      {[0, 1, 2].flatMap((layer) => particles.map((particle, index) => (
-        <span
+      {[0, 1, 2].flatMap((layer) => particles.map((particle, index) => {
+        const baseOpacity = 0.35 + ((index + layer) % 4) * 0.16
+        const travelScale = 1 - layer * 0.18
+
+        return (
+        <motion.span
           key={`${layer}-${index}`}
           className="absolute rounded-full bg-white shadow-[0_0_7px_rgba(255,255,255,0.9)]"
           style={{
@@ -41,10 +45,22 @@ export function GalacticParticles({ alwaysVisible = false }: { alwaysVisible?: b
             top: `${(particle.top + layer * 23) % 94}%`,
             width: particle.size - layer * 0.2,
             height: particle.size - layer * 0.2,
-            opacity: 0.35 + ((index + layer) % 4) * 0.16,
+            opacity: baseOpacity,
+          }}
+          animate={reduceMotion ? undefined : {
+            x: [0, particle.x * travelScale, particle.x * -0.2, 0],
+            y: [0, particle.y * travelScale, particle.y * -0.15, 0],
+            opacity: [baseOpacity * 0.45, 1, baseOpacity * 0.6, baseOpacity * 0.45],
+            scale: [0.75, 1.45, 0.9, 0.75],
+          }}
+          transition={reduceMotion ? undefined : {
+            duration: particle.duration + layer * 1.4,
+            delay: particle.delay + layer * 0.35,
+            repeat: Infinity,
+            ease: "easeInOut",
           }}
         />
-      )))}
+      )}))}
     </motion.div>
   )
 }

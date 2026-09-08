@@ -20,6 +20,7 @@ model User {
   sessions                    Session[]
   accounts                    Account[]
   classroomCourses            ClassroomCourse[]
+  activitySummaries           ActivitySummary[]
   classroomItemCompletions    ClassroomItemCompletion[]
   calendarEvents              CalendarEvent[]
   calendarEventDayCompletions CalendarEventDayCompletion[]
@@ -271,6 +272,7 @@ model ClassroomCourse {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   assignments      ClassroomAssignment[]
+  activitySummaries ActivitySummary[]
   itemCompletions  ClassroomItemCompletion[]
   studyPreferences StudySubjectPreference[]
   studySessions    StudySession[]
@@ -528,6 +530,21 @@ model CalendarEvent {
   @@index([userId, startAt])
   @@index([userId, recurrence])
   @@index([classroomAssignmentId])
+}
+
+model ActivitySummary {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId   String
+  course     ClassroomCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  itemKey    String
+  summaryUrl String
+  notebookLmUrl String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, courseId, itemKey])
 }
 
 model ClassroomItemCompletion {

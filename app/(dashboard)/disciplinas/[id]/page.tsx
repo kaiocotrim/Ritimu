@@ -3,6 +3,7 @@ import { headers } from "next/headers"
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 
+import { ActivitySummaryAction } from "@/components/classroom/activity-summary-action"
 import { CompletionCheckbox } from "@/components/classroom/completion-checkbox"
 import { ManualCourseWorkspace } from "@/components/classroom/manual-course-workspace"
 import { auth } from "@/lib/auth"
@@ -194,6 +195,12 @@ export default async function DisciplinaPage({
     completedKeys = new Set(completedItems.map((item) => item.itemKey))
   }
 
+  const summaries = isManualCourse ? [] : await prisma.activitySummary.findMany({
+    where: { userId: session.user.id, courseId: course.id, itemKey: { in: itemKeys } },
+    select: { itemKey: true, summaryUrl: true, notebookLmUrl: true },
+  })
+  const summaryUrls = new Map(summaries.map((summary) => [summary.itemKey, { notionUrl: summary.summaryUrl || null, notebookLmUrl: summary.notebookLmUrl }]))
+
   const totalItems = itemKeys.length
   const completedCount = completedKeys.size
   const progressPercent =
@@ -278,6 +285,7 @@ export default async function DisciplinaPage({
                   assignments={assignmentsByTopic.get(topic.topicId) ?? []}
                   materials={materialsByTopic.get(topic.topicId) ?? []}
                   completedKeys={completedKeys}
+                  summaryUrls={summaryUrls}
                 />
               ))}
 
@@ -288,6 +296,7 @@ export default async function DisciplinaPage({
                   assignments={unassigned}
                   materials={unassignedMaterials}
                   completedKeys={completedKeys}
+                  summaryUrls={summaryUrls}
                 />
               )}
             </div>
@@ -305,17 +314,19 @@ function TopicSection({
   assignments,
   materials,
   completedKeys,
+  summaryUrls,
 }: {
   title: string
   courseId: string
   assignments: GoogleClassroomCourseWork[]
   materials: GoogleClassroomCourseWorkMaterial[]
   completedKeys: Set<string>
+  summaryUrls: Map<string, { notionUrl: string | null; notebookLmUrl: string | null }>
 }) {
   const itemCount = assignments.length + materials.length
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-black/5 bg-white">
+    <section className="rounded-3xl border border-black/5 bg-white">
       <div className="border-b border-black/5 bg-black/[0.02] px-5 py-4 sm:px-6">
         <h3 className="font-semibold">{title}</h3>
         <p className="mt-1 text-xs text-black/45">
@@ -336,7 +347,7 @@ function TopicSection({
             return (
               <article
                 key={assignment.id}
-                className="flex items-start gap-4 px-5 py-4 sm:px-6"
+                className="flex flex-wrap items-start gap-4 px-5 py-4 sm:px-6 lg:flex-nowrap"
               >
                 <CompletionCheckbox
                   courseId={courseId}
@@ -368,18 +379,21 @@ function TopicSection({
                     )}
                   </div>
                 </div>
-                {activityUrl && (
-                  <a
-                    href={activityUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Abrir recurso externo de ${assignment.title}`}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-black/50 transition-colors hover:bg-black/5 hover:text-black"
-                  >
-                    <span className="hidden sm:inline">Abrir atividade</span>
-                    <ExternalLink className="size-4" aria-hidden="true" />
-                  </a>
-                )}
+                <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 self-center lg:w-auto lg:shrink-0 lg:flex-nowrap">
+                  {activityUrl && (
+                    <a
+                      href={activityUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Abrir recurso externo de ${assignment.title}`}
+                      className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-black/10 px-3 text-sm font-medium text-black/60 transition-colors hover:bg-black/5 hover:text-black"
+                    >
+                      <span className="hidden sm:inline">Abrir atividade</span>
+                      <ExternalLink className="size-4" aria-hidden="true" />
+                    </a>
+                  )}
+                  <ActivitySummaryAction courseId={courseId} itemKey={itemKey} title={assignment.title} initialLinks={summaryUrls.get(itemKey) ?? { notionUrl: null, notebookLmUrl: null }} />
+                </div>
               </article>
             )
           })}
@@ -390,7 +404,7 @@ function TopicSection({
             return (
               <article
                 key={`material-${material.id}`}
-                className="flex items-start gap-4 px-5 py-4 sm:px-6"
+                className="flex flex-wrap items-start gap-4 px-5 py-4 sm:px-6 lg:flex-nowrap"
               >
                 <CompletionCheckbox
                   courseId={courseId}
@@ -414,18 +428,21 @@ function TopicSection({
                     </p>
                   )}
                 </div>
-                {materialUrl && (
-                  <a
-                    href={materialUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Abrir material ${material.title}`}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-black/50 transition-colors hover:bg-black/5 hover:text-black"
-                  >
-                    <span className="hidden sm:inline">Abrir material</span>
-                    <ExternalLink className="size-4" aria-hidden="true" />
-                  </a>
-                )}
+                <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 self-center lg:w-auto lg:shrink-0 lg:flex-nowrap">
+                  {materialUrl && (
+                    <a
+                      href={materialUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Abrir material ${material.title}`}
+                      className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-black/10 px-3 text-sm font-medium text-black/60 transition-colors hover:bg-black/5 hover:text-black"
+                    >
+                      <span className="hidden sm:inline">Abrir material</span>
+                      <ExternalLink className="size-4" aria-hidden="true" />
+                    </a>
+                  )}
+                  <ActivitySummaryAction courseId={courseId} itemKey={itemKey} title={material.title} initialLinks={summaryUrls.get(itemKey) ?? { notionUrl: null, notebookLmUrl: null }} />
+                </div>
               </article>
             )
           })}

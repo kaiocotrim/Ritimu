@@ -7,15 +7,15 @@ import {
   Circle,
   Sparkles,
   Target,
-  Trophy,
-  Zap,
 } from "lucide-react"
 
 import { auth } from "@/lib/auth"
 import { getGamificationSummary } from "@/lib/gamification"
 import { getMissionProgress, syncMissionRewards } from "@/lib/missions"
 import { AnimatedCard, AnimatedItem } from "@/components/dashboard/animated-card"
-import { FireIcon } from "@/components/animations/fire/page"
+import { InteractiveStatIcon } from "@/components/missions/interactive-stat-icon"
+import { InteractiveRepostIcon } from "@/components/missions/interactive-repost-icon"
+import { InteractiveFormIcon } from "@/components/missions/interactive-form-icon"
 import { Sidebar } from "@/components/sidebar/sidebar"
 import { prisma } from "@/lib/prisma"
 
@@ -174,10 +174,7 @@ export default async function MissoesPage({
         >
           <div className="flex flex-wrap items-center justify-between gap-8">
             <div className="flex items-center gap-3">
-              <CheckCircle2
-                className="size-9 shrink-0 text-lime-400"
-                aria-hidden="true"
-              />
+              <InteractiveFormIcon />
               <div>
                 <p className="text-sm text-white/50">Missões concluídas</p>
                 <p className="text-2xl font-bold">
@@ -190,7 +187,7 @@ export default async function MissoesPage({
             </div>
 
             <div className="flex items-center gap-3">
-              <Zap className="size-9 shrink-0 text-amber-400" aria-hidden="true" />
+              <InteractiveRepostIcon />
               <div>
                 <p className="text-sm text-white/50">XP ganho hoje</p>
                 <p className="text-2xl font-bold">
@@ -210,12 +207,12 @@ export default async function MissoesPage({
               </div>
             </div>
 
-            <div className="hidden items-center justify-center rounded-full bg-white/5 p-5 sm:flex">
-              <Trophy className="size-8 text-lime-400" aria-hidden="true" />
+            <div className="hidden size-20 items-center justify-center rounded-full bg-white/5 sm:flex">
+              <InteractiveStatIcon src="/animations/Trophy.json" label="Conquistas" className="size-18" tone="orange" />
             </div>
 
             <div className="flex items-center gap-3">
-              <FireIcon className="size-25 shrink-0 fill-orange-500 text-orange-500" />
+              <InteractiveStatIcon src="/animations/Fire.json" label="Sequência atual" className="size-16" loop tone="orange" />
               <div>
                 <p className="text-sm text-white/50">Sequência</p>
                 <p className="text-2xl font-bold">

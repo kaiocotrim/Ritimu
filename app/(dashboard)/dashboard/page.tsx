@@ -1,6 +1,6 @@
 import { headers } from "next/headers"
 import Image from "next/image"
-import { SuccessConfettiIcon } from "@/components/animations/success-confetti/page"
+import { StreakDayStatus } from "@/components/dashboard/streak-day-status"
 import { CompletionConfetti } from "@/components/dashboard/completion-confetti"
 import { AnimatedCard } from "@/components/dashboard/animated-card"
 import { InteractiveProgress } from "@/components/dashboard/interactive-progress"
@@ -75,9 +75,13 @@ export default async function Dashboard() {
     subtitle: event.studySession?.subjectName ?? eventTypeLabels[event.type],
     accent: index % 2 === 0 ? "purple" as const : "blue" as const,
   }))
-  const week = weekDays.map(({ label, activityIndex }) => ({
+  const todayActivityIndex = new Date(`${new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date())}T12:00:00`).getDay()
+  const todayWeekPosition = weekDays.findIndex((day) => day.activityIndex === todayActivityIndex)
+  const week = weekDays.map(({ label, activityIndex }, index) => ({
     label,
     done: gamification.weekActivity[activityIndex],
+    missed: index < todayWeekPosition && !gamification.weekActivity[activityIndex],
+    isToday: index === todayWeekPosition,
   }))
 
 
@@ -174,7 +178,7 @@ export default async function Dashboard() {
               className="object-cover"
             />
             <div className="pointer-events-none absolute inset-0 bg-[#080B1B]/80 opacity-0 transition-opacity duration-1000 ease-in-out group-hover:opacity-100" />
-            <GalacticParticles />
+            <GalacticParticles alwaysVisible />
             <CompletionConfetti />
             <div className="relative z-10 flex items-center justify-between">
               <h2 className="text-lg font-semibold transition-colors duration-700 group-hover:text-white">Sequência</h2>
@@ -194,11 +198,7 @@ export default async function Dashboard() {
                   </span>
 
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-visible">
-                    {day.done ? (
-                      <SuccessConfettiIcon className="h-12 w-12 scale-[2.2]" />
-                    ) : (
-                      <div className="h-12 w-12 rounded-full border border-black/15 bg-white transition-colors duration-700 group-hover:border-white/30 group-hover:bg-white/10" />
-                    )}
+                    <StreakDayStatus done={day.done} missed={day.missed} isToday={day.isToday} />
                   </div>
                 </div>
               ))}
