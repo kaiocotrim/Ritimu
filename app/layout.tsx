@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Pixelify_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { headers } from "next/headers";
@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const pixelFont = Pixelify_Sans({ subsets: ["latin"], variable: "--font-pixelify" });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable, session && darkTheme && "dark")}
+      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, pixelFont.variable, "font-sans", inter.variable, session && darkTheme && "dark")}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

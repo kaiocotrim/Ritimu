@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Trophy } from "lucide-react"
+import Image from "next/image"
 
 type Result = { battle: { id: string; winnerId: string | null }; room: { participants: { userId: string; user: { name: string; email: string } }[] }; scores: Record<string, number>; questions: { id: string; statement: string; options: unknown; correctOption: number; explanation: string; answers: { userId: string; selectedOption: number | null; isCorrect: boolean; responseTimeMs: number; points: number }[] }[] }
 
@@ -11,7 +11,7 @@ export function BattleResult({ result, userId }: { result: Result; userId: strin
     <section className="mx-auto min-h-screen max-w-5xl px-4 pb-32 pt-8 text-[#111111] sm:px-8">
       <div className="rounded-[28px] border border-black/5 bg-white p-6 text-center shadow-sm">
         <div className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-[#50D05C]/15">
-          <Trophy className="size-9 text-[#248A30]" />
+          <Image src="/iconesPixel/trophy.png" alt="trophy" width={36} height={36} className="size-9" />
         </div>
         <h1 className="mt-4 text-4xl font-black tracking-tight">{title}</h1>
         <div className="mt-6 grid gap-3 sm:grid-cols-2">

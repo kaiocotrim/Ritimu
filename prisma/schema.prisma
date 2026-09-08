@@ -38,6 +38,9 @@ model User {
   codeBattleParticipants      CodeBattleParticipant[]
   codeBattlesWon              CodeBattle[]                 @relation("CodeBattleWinner")
   codeBattleAnswers           CodeBattleAnswer[]
+  roadmapEnrollments          RoadmapEnrollment[]
+  roadmapLessonProgress       RoadmapLessonProgress[]
+  studyRoadmapsCreated        StudyRoadmap[]               @relation("RoadmapCreator")
 
   @@unique([email])
   @@map("user")
@@ -271,13 +274,13 @@ model ClassroomCourse {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  assignments      ClassroomAssignment[]
+  assignments       ClassroomAssignment[]
   activitySummaries ActivitySummary[]
-  itemCompletions  ClassroomItemCompletion[]
-  studyPreferences StudySubjectPreference[]
-  studySessions    StudySession[]
-  studyContents    StudyContent[]
-  totalItems       Int                       @default(0)
+  itemCompletions   ClassroomItemCompletion[]
+  studyPreferences  StudySubjectPreference[]
+  studySessions     StudySession[]
+  studyContents     StudyContent[]
+  totalItems        Int                       @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -533,16 +536,16 @@ model CalendarEvent {
 }
 
 model ActivitySummary {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courseId   String
-  course     ClassroomCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  itemKey    String
-  summaryUrl String
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId      String
+  course        ClassroomCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  itemKey       String
+  summaryUrl    String
   notebookLmUrl String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@unique([userId, courseId, itemKey])
 }
@@ -571,6 +574,138 @@ enum XpSource {
   STUDY_CONTENT
   MISSION
   CODE_BATTLE
+  ROADMAP_LESSON
+}
+
+enum RoadmapDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum RoadmapLessonType {
+  STUDY
+  QUIZ
+  CHALLENGE
+  PROJECT
+  REVIEW
+}
+
+enum RoadmapProgressStatus {
+  AVAILABLE
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum RoadmapOrigin {
+  OFFICIAL
+  AI
+  CLASSROOM
+  ADAPTIVE
+}
+
+model StudyRoadmap {
+  id             String              @id @default(cuid())
+  creatorId      String?
+  creator        User?               @relation("RoadmapCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  title          String
+  slug           String              @unique
+  description    String
+  category       String
+  difficulty     RoadmapDifficulty   @default(BEGINNER)
+  estimatedHours Int
+  origin         RoadmapOrigin       @default(OFFICIAL)
+  isOfficial     Boolean             @default(false)
+  isPublic       Boolean             @default(false)
+  logo           String?
+  sourceMetadata Json?
+  modules        RoadmapModule[]
+  enrollments    RoadmapEnrollment[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([isPublic, category])
+  @@index([creatorId])
+}
+
+model RoadmapModule {
+  id          String          @id @default(cuid())
+  roadmapId   String
+  roadmap     StudyRoadmap    @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  order       Int
+  xpReward    Int             @default(0)
+  lessons     RoadmapLesson[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([roadmapId, order])
+  @@index([roadmapId])
+}
+
+model RoadmapLesson {
+  id               String                    @id @default(cuid())
+  moduleId         String
+  module           RoadmapModule             @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title            String
+  description      String
+  objective        String?
+  content          Json?
+  type             RoadmapLessonType         @default(STUDY)
+  order            Int
+  estimatedMinutes Int                       @default(30)
+  xpReward         Int                       @default(25)
+  sourceMetadata   Json?
+  prerequisites    RoadmapLessonDependency[] @relation("LessonPrerequisites")
+  dependents       RoadmapLessonDependency[] @relation("LessonDependents")
+  progress         RoadmapLessonProgress[]
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+
+  @@unique([moduleId, order])
+  @@index([moduleId])
+}
+
+model RoadmapLessonDependency {
+  lessonId       String
+  prerequisiteId String
+  lesson         RoadmapLesson @relation("LessonPrerequisites", fields: [lessonId], references: [id], onDelete: Cascade)
+  prerequisite   RoadmapLesson @relation("LessonDependents", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@id([lessonId, prerequisiteId])
+  @@index([prerequisiteId])
+}
+
+model RoadmapEnrollment {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmapId   String
+  roadmap     StudyRoadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  startedAt   DateTime     @default(now())
+  completedAt DateTime?
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([userId, roadmapId])
+  @@index([userId, updatedAt])
+}
+
+model RoadmapLessonProgress {
+  id          String                @id @default(cuid())
+  userId      String
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId    String
+  lesson      RoadmapLesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  status      RoadmapProgressStatus @default(AVAILABLE)
+  progress    Int                   @default(0)
+  completedAt DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([userId, status])
+  @@index([lessonId])
 }
 
 enum CodeBattleRoomStatus {

@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, Brain, Flag, Gamepad2, Home, Trophy, User } from "lucide-react"
+import { BookOpen, Brain, Flag, Gamepad2, Home, Map, Trophy, User } from "lucide-react"
 
 const navigationItems = [
   { href: "/dashboard", label: "Início", Icon: Home },
   { href: "/disciplinas", label: "Matérias", Icon: BookOpen },
   { href: "/metas", label: "Missões", Icon: Flag },
   { href: "/plano-de-estudos", label: "Meu plano", Icon: Brain },
+  { href: "/roadmaps", label: "Roadmaps", Icon: Map },
   { href: "/ranking", label: "Ranking", Icon: Trophy },
   { href: "/x1", label: "X1", Icon: Gamepad2 },
   { href: "/perfil", label: "Perfil", Icon: User },
@@ -20,6 +21,7 @@ export function Sidebar({ variant }: { variant?: "light" | "dark" }) {
 
   return (
     <nav
+      data-ritimu-sidebar
       aria-label="Navegação principal"
       className={`fixed inset-x-2 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-20 mx-auto flex w-fit max-w-[calc(100vw-1rem)] items-center gap-1 overflow-x-auto rounded-full border px-2 py-2 backdrop-blur-md backdrop-saturate-150 transition-all duration-300 sm:inset-x-0 sm:bottom-8 sm:px-3 sm:py-2.5 ${
         isDarkPage
