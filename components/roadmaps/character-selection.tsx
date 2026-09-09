@@ -3,6 +3,7 @@
 import Image from "next/image"
 import { Check, X } from "lucide-react"
 import { useState, useSyncExternalStore } from "react"
+import { getClientStorageItem, removeClientStorageItem, setClientStorageItem } from "@/lib/client-storage"
 
 const characters = [
   { id: "cavaleiro", name: "Cavaleiro", description: "Disciplina em todas as batalhas", image: "/personagens_ritimu_png/cavaleiro.png", energy: 80, focus: 70, creativity: 50, speed: 60 },
@@ -33,25 +34,25 @@ export function CharacterSelection() {
     window.addEventListener("ritimu-character-change", onChange)
     return () => window.removeEventListener("ritimu-character-change", onChange)
   }, () => {
-    if (window.localStorage.getItem("ritimu-character-modal-open") === "true") return true
-    const savedId = window.localStorage.getItem("ritimu-character-id")
-    return window.localStorage.getItem("ritimu-character-selected") !== "true" || !savedId || !characters.some((character) => character.id === savedId)
+    if (getClientStorageItem("ritimu-character-modal-open") === "true") return true
+    const savedId = getClientStorageItem("ritimu-character-id")
+    return getClientStorageItem("ritimu-character-selected") !== "true" || !savedId || !characters.some((character) => character.id === savedId)
   }, () => false)
   const [selectedOverride, setSelectedOverride] = useState<string | null>(null)
-  const storedId = typeof window === "undefined" ? null : window.localStorage.getItem("ritimu-character-id")
+  const storedId = typeof window === "undefined" ? null : getClientStorageItem("ritimu-character-id")
   const selectedId = selectedOverride ?? (characters.some((character) => character.id === storedId) ? storedId : "cavaleiro")
   const selected = characters.find((character) => character.id === selectedId) ?? characters[0]
 
   function continueLater() {
-    window.localStorage.setItem("ritimu-character-selected", "true")
-    window.localStorage.removeItem("ritimu-character-modal-open")
+    setClientStorageItem("ritimu-character-selected", "true")
+    removeClientStorageItem("ritimu-character-modal-open")
     window.dispatchEvent(new Event("ritimu-character-change"))
   }
 
   function selectCharacter() {
-    window.localStorage.setItem("ritimu-character-selected", "true")
-    window.localStorage.setItem("ritimu-character-id", selected.id)
-    window.localStorage.removeItem("ritimu-character-modal-open")
+    setClientStorageItem("ritimu-character-selected", "true")
+    setClientStorageItem("ritimu-character-id", selected.id)
+    removeClientStorageItem("ritimu-character-modal-open")
     window.dispatchEvent(new Event("ritimu-character-change"))
   }
 

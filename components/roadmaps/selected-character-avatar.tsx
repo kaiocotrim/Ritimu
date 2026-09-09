@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { useSyncExternalStore } from "react"
+import { getClientStorageItem } from "@/lib/client-storage"
 
 const characterImages: Record<string, string> = {
   cavaleiro: "/personagens_ritimu_png/cavaleiro.png",
@@ -36,7 +37,7 @@ export function SelectedCharacterAvatar({ fallbackSrc = "/personagens_ritimu_png
   sizes?: string
   className?: string
 }) {
-  const characterId = useSyncExternalStore(subscribe, () => window.localStorage.getItem("ritimu-character-id"), () => null)
+  const characterId = useSyncExternalStore(subscribe, () => getClientStorageItem("ritimu-character-id"), () => null)
   const src = (characterId && characterImages[characterId]) || fallbackSrc
   if (!src) return null
   return <Image src={src} alt={alt} fill={fill} width={fill ? undefined : 56} height={fill ? undefined : 56} sizes={sizes} className={className} />

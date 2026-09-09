@@ -9,7 +9,6 @@ import { Sidebar } from "@/components/sidebar/sidebar"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import {
-  BookOpen,
   CalendarDays,
   ChevronRight,
 } from "lucide-react"
@@ -17,8 +16,6 @@ import { auth } from "@/lib/auth"
 import { getGamificationSummary } from "@/lib/gamification"
 import { getTodayCalendarEvents } from "@/lib/study-plan/today"
 import { prisma } from "@/lib/prisma"
-
-
 const weekDays = [
   { label: "S", activityIndex: 1 },
   { label: "T", activityIndex: 2 },
@@ -47,8 +44,6 @@ export default async function Dashboard() {
   const todayProgress = {
     percent: todayEvents.length > 0 ? Math.round((completedToday / todayEvents.length) * 100) : 0,
   }
-  const nextTask = todayEvents.find((event) => !event.occurrenceCompleted)
-  const nextTaskProgress = nextTask ? 0 : todayEvents.length > 0 ? 100 : 0
   const eventTypeLabels = {
     STUDY: "Estudo",
     CLASS: "Aula",
@@ -105,7 +100,7 @@ export default async function Dashboard() {
               className="group relative cursor-pointer overflow-hidden rounded-3xl border border-black/5 bg-white p-6 sm:p-7"
             >
               <Image
-                src="/BannerDashboard100.png"
+                src="/novaIMG.png"
                 alt=""
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
@@ -125,44 +120,16 @@ export default async function Dashboard() {
           {/* Próxima tarefa */}
           <AnimatedCard
             delay={0.12}
-            className="group relative overflow-hidden rounded-3xl border border-black/5 bg-white p-6 sm:p-7"
+            className="group relative aspect-[16/9] overflow-hidden rounded-3xl border border-[#0b2739] bg-[#031827] p-0"
           >
             <Image
-              src="/BannerDashboard66.png"
-              alt=""
+              src="/roadmapEp3.png"
+              alt="Próxima etapa do roadmap Full Stack Developer"
               fill
               sizes="(min-width: 1024px) 50vw, 100vw"
-              className="scale-[1.02] object-cover transition-[filter,transform] duration-1000 ease-in-out group-hover:scale-[1.04] group-hover:blur-[4px]"
+              className="object-cover transition-transform duration-1000 ease-in-out group-hover:scale-[1.02]"
             />
-            <h2 className="relative z-10 mb-6 text-lg font-semibold text-white">Próxima tarefa</h2>
-            <div className="relative z-10 mb-6 flex items-center gap-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[#50D05C]">
-                <BookOpen className="h-7 w-7 text-white" />
-              </div>
-              <div>
-                <p className="text-xl font-semibold text-white">
-                  {nextTask?.title ?? (todayEvents.length > 0 ? "Tudo concluído!" : "Nenhuma tarefa para hoje")}
-                </p>
-                <p className="text-white/70">{nextTask?.studySession?.subjectName ?? (nextTask ? eventTypeLabels[nextTask.type] : "Aproveite seu tempo livre")}</p>
-              </div>
-            </div>
-
-            <div className="relative z-10 mb-6 flex items-center gap-3">
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/10">
-                <div
-                  className="h-full rounded-full bg-[#50D05C]"
-                  style={{ width: `${nextTaskProgress}%` }}
-                />
-              </div>
-              <span className="text-sm font-medium text-white/80">
-                {nextTaskProgress}%
-              </span>
-            </div>
-
-            <Link href="/progresso-hoje" className="relative z-10 mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#50D05C] py-4 text-base font-semibold text-white transition hover:bg-[#45B950]">
-                Continuar
-                <ChevronRight className="h-5 w-5" />
-            </Link>
+            <Link href="/roadmaps" className="absolute inset-0 z-10" aria-label="Continuar roadmap" />
           </AnimatedCard>
 
           {/* Sequência */}

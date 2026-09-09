@@ -1,10 +1,11 @@
 "use client"
 
 import { SelectedCharacterAvatar } from "@/components/roadmaps/selected-character-avatar"
+import { setClientStorageItem } from "@/lib/client-storage"
 
 export function ChangeCharacterButton() {
   function openCharacterSelection() {
-    window.localStorage.setItem("ritimu-character-modal-open", "true")
+    setClientStorageItem("ritimu-character-modal-open", "true")
     window.dispatchEvent(new Event("ritimu-character-change"))
   }
 

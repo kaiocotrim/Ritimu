@@ -233,6 +233,10 @@ html.dark nav[aria-label="Navegação principal"] a[class*="text-black"]:hover {
   color: rgb(255 255 255 / 82%) !important;
 }
 
+html.dark nav[data-layout="side"] {
+  background-color: #041832 !important;
+}
+
 html.dark .theme-page {
   background: #0d0f15 !important;
   color: #f5f7fa !important;

@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { Check, LoaderCircle, Lock, Play, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -43,7 +42,7 @@ export function RoadmapNode({ roadmapId, lesson, state, side }: {
             <Icon className="size-3.5" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2"><Link href={`/roadmaps/${roadmapId}/lesson/${lesson.id}`} className="truncate font-semibold underline decoration-transparent underline-offset-2 hover:decoration-current">{lesson.title}</Link><span className="shrink-0 text-[10px] font-bold opacity-60">{lesson.xpReward} XP</span></div>
+            <div className="flex items-center justify-between gap-2"><span className="truncate font-semibold">{lesson.title}</span><span className="shrink-0 text-[10px] font-bold opacity-60">{lesson.xpReward} XP</span></div>
             {state === "AVAILABLE" && <button onClick={complete} disabled={pending} className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold underline decoration-black/25 underline-offset-2 disabled:opacity-60">
               {pending ? <LoaderCircle className="size-3 animate-spin" /> : <Check className="size-3" />} Marcar concluída
             </button>}

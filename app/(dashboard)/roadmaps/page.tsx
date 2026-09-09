@@ -44,7 +44,7 @@ export default async function RoadmapsPage() {
     </article>
   }
 
-  return <main className="min-h-screen bg-[#F6F5F1] px-5 pb-32 pt-10 text-[#111] sm:px-10 lg:px-16">
+  return <main className="min-h-screen bg-[#F6F5F1] px-5 pb-32 pt-10 text-[#111] sm:px-10 lg:px-16 xl:pl-[calc(18rem+2.5rem)]">
     <CharacterSelection />
     <div className="mx-auto max-w-6xl">
       <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
