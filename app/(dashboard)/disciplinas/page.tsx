@@ -23,6 +23,7 @@ import { SyncGoogleClassroom } from "@/components/integrations/sync-google-class
 import { CreateManualCourse } from "@/components/classroom/create-manual-course"
 import { AnimatedCard, AnimatedItem } from "@/components/dashboard/animated-card"
 import { Sidebar } from "@/components/sidebar/sidebar"
+import { StudyTimerButton } from "@/components/study-timer/study-timer-button"
 
 // Paleta cíclica de ícone + cor por card, na ordem do mockup.
 const CARD_STYLES = [
@@ -147,7 +148,10 @@ export default async function DisciplinasPage({
               Continue sua jornada. Cada aula te aproxima do seu objetivo! 🚀
             </p>
           </div>
-          <SyncGoogleClassroom connectedEmail={connectedGoogleEmail} />
+          <div className="flex items-start gap-3">
+            <StudyTimerButton />
+            <SyncGoogleClassroom connectedEmail={connectedGoogleEmail} />
+          </div>
         </div>
 
         {/* Hero banner */}

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { StudyTimerProvider } from "@/components/study-timer/study-timer-provider";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 const pixelFont = Pixelify_Sans({ subsets: ["latin"], variable: "--font-pixelify" });
@@ -39,7 +40,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, pixelFont.variable, "font-sans", inter.variable, session && darkTheme && "dark")}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <StudyTimerProvider>{children}</StudyTimerProvider>
+      </body>
     </html>
   );
 }
