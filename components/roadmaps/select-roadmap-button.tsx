@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, Check, LoaderCircle } from "lucide-react"
+import { LoaderCircle } from "lucide-react"
 
 export function SelectRoadmapButton({ roadmapId, selected }: { roadmapId: string; selected: boolean }) {
   const router = useRouter()
@@ -17,5 +17,5 @@ export function SelectRoadmapButton({ roadmapId, selected }: { roadmapId: string
       router.refresh()
     })
   }
-  return <div><button onClick={select} disabled={pending} className="font-pixel mt-6 inline-flex items-center gap-2 rounded-lg border-2 border-[#101217] bg-[#101217] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-[#299d37] hover:border-[#299d37] disabled:opacity-60">{pending ? <LoaderCircle className="size-4 animate-spin" /> : selected ? <Check className="size-4" /> : <ArrowRight className="size-4" />}{selected ? "Continuar" : "Escolher"}</button>{error && <p className="mt-2 text-xs text-red-600">{error}</p>}</div>
+  return <div><button onClick={select} disabled={pending} className="font-pixel mt-6 inline-flex items-center gap-2 border-2 border-[#0b140d] bg-[#2f7d3c] px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_0_0_2px_#d49a32,4px_4px_0_2px_#101712] transition hover:bg-[#45b950] hover:shadow-[0_0_0_2px_#f0b43c,2px_2px_0_2px_#101712] active:translate-x-0.5 active:translate-y-0.5 disabled:opacity-60">{pending ? <LoaderCircle className="size-4 animate-spin" /> : <span className="pixel-control-key grid size-5 place-items-center border-2 border-[#0b140d] bg-[#78c866] text-[10px] text-[#07100a]">A</span>}{selected ? "Continuar" : "Selecionar"}</button>{error && <p className="mt-2 text-xs text-red-600">{error}</p>}</div>
 }

@@ -58,8 +58,8 @@ export function CharacterSelection() {
 
   if (!open) return null
 
-  return <div className="fixed inset-0 z-70 grid place-items-center bg-[#061b20]/70 p-3 backdrop-blur-sm sm:p-6">
-    <section role="dialog" aria-modal="true" aria-labelledby="character-title" className="relative max-h-[calc(100vh-1.5rem)] w-full max-w-4xl overflow-y-auto rounded-2xl border-2 border-[#16484b] bg-[#062c2f] p-4 text-white shadow-2xl sm:p-6">
+  return <div className="roadmaps-character-ui fixed inset-0 z-70 grid place-items-center bg-[#061b20]/70 p-3 backdrop-blur-sm sm:p-6">
+    <section role="dialog" aria-modal="true" aria-labelledby="character-title" className="relative max-h-[calc(100vh-1.5rem)] w-full max-w-4xl overflow-y-auto rounded-2xl border-2 border-[#d49a32] bg-[#062c2f] p-4 text-white shadow-[8px_8px_0_#101712] sm:p-6">
       <button type="button" onClick={continueLater} aria-label="Fechar seleção" className="absolute right-4 top-4 grid size-9 place-items-center rounded-lg border border-white/20 bg-white/5 text-white/70 transition hover:bg-white/15 hover:text-white"><X className="size-4" /></button>
       <header className="pr-12"><p className="font-pixel text-xs font-bold uppercase tracking-wider text-[#67e875]">Sua jornada começa agora</p><h2 id="character-title" className="font-pixel mt-2 text-2xl font-bold sm:text-4xl">Escolha seu personagem</h2><p className="font-pixel mt-2 text-xs text-white/60 sm:text-sm">Defina seu avatar inicial e comece sua evolução.</p></header>
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_.8fr]">

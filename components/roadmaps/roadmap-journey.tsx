@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { getFreeResources } from "@/lib/roadmaps/free-resources"
 import { SelectedCharacterAvatar } from "@/components/roadmaps/selected-character-avatar"
+import { RoadmapFlowchart as LearningPath } from "@/components/roadmaps/roadmap-flowchart"
+import { KnowledgeRoadmap } from "@/components/roadmaps/knowledge-roadmap"
 
 type Lesson = { id: string; title: string; description: string; xpReward: number; type: string; state: "COMPLETED" | "AVAILABLE" | "LOCKED" }
 type Module = { id: string; order: number; title: string; description: string; lessons: Lesson[] }
@@ -66,7 +68,7 @@ function getModuleColor(title: string): string {
   return "bg-gray-100"
 }
 
-function LearningPath({ moduleTitle, lessons, userName, onSelect }: { moduleTitle: string; lessons: Lesson[]; userName: string; onSelect: (lesson: Lesson, moduleTitle: string) => void }) {
+export function LegacyLearningPath({ moduleTitle, lessons, userName, onSelect }: { moduleTitle: string; lessons: Lesson[]; userName: string; onSelect: (lesson: Lesson, moduleTitle: string) => void }) {
   const currentIndex = lessons.findIndex((lesson) => lesson.state === "AVAILABLE")
   return <div className="relative min-h-115 overflow-hidden rounded-2xl bg-[#faf9f0] px-4 py-8 sm:px-12">
     <Image src="/BannerDiv22.png" alt="" fill sizes="(min-width:1280px) 900px,100vw" className="pointer-events-none object-cover object-center opacity-30" />
@@ -107,7 +109,8 @@ export function RoadmapJourney({ roadmapId, modules, userName }: { roadmapId: st
     setSelectedLesson({ ...lesson, moduleTitle })
   }
   return <>
-  <div className="space-y-3">{modules.map((module, index) => {
+  <KnowledgeRoadmap modules={modules} onSelect={selectLesson} />
+  <div className="hidden space-y-3">{modules.map((module, index) => {
     const completed = module.lessons.filter((lesson) => lesson.state === "COMPLETED").length
     const progress = module.lessons.length ? Math.round(completed / module.lessons.length * 100) : 0
     const Icon = moduleIcons[(module.order - 1) % moduleIcons.length]

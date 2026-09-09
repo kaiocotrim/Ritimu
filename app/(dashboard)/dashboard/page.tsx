@@ -5,6 +5,7 @@ import { CompletionConfetti } from "@/components/dashboard/completion-confetti"
 import { AnimatedCard } from "@/components/dashboard/animated-card"
 import { InteractiveProgress } from "@/components/dashboard/interactive-progress"
 import { GalacticParticles } from "@/components/dashboard/galactic-particles"
+import { RoadmapFrameAnimation } from "@/components/dashboard/roadmap-frame-animation"
 import { Sidebar } from "@/components/sidebar/sidebar"
 import { redirect } from "next/navigation"
 import Link from "next/link"
@@ -25,6 +26,7 @@ const weekDays = [
   { label: "S", activityIndex: 6 },
   { label: "D", activityIndex: 0 },
 ]
+const roadmapHoverMessage = "A jornada continua, guerreiro..."
 
 export default async function Dashboard() {
   const session = await auth.api.getSession({
@@ -122,14 +124,28 @@ export default async function Dashboard() {
             delay={0.12}
             className="group relative aspect-[16/9] overflow-hidden rounded-3xl border border-[#0b2739] bg-[#031827] p-0"
           >
-            <Image
-              src="/roadmapEp3.png"
-              alt="Próxima etapa do roadmap Full Stack Developer"
-              fill
-              sizes="(min-width: 1024px) 50vw, 100vw"
-              className="object-cover transition-transform duration-1000 ease-in-out group-hover:scale-[1.02]"
-            />
-            <Link href="/roadmaps" className="absolute inset-0 z-10" aria-label="Continuar roadmap" />
+            <RoadmapFrameAnimation />
+            <Link
+              href="/roadmaps"
+              className="absolute inset-0 z-10"
+              aria-label="Continuar roadmap"
+            >
+              <span className="absolute inset-0 bg-black/55 opacity-0 transition-opacity duration-300 group-hover:opacity-100" aria-hidden="true" />
+              <span className="roadmap-game-message font-pixel absolute inset-0 flex items-center justify-center px-4 text-center text-lg font-bold tracking-wide text-white opacity-0 drop-shadow-[3px_3px_0_#07100a] group-hover:opacity-100 sm:px-8 sm:text-2xl">
+                <span className="sr-only">{roadmapHoverMessage}</span>
+                <span aria-hidden="true" className="inline-flex">
+                  {Array.from(roadmapHoverMessage).map((character, index) => (
+                    <span
+                      key={`${character}-${index}`}
+                      className="roadmap-game-letter opacity-0"
+                      style={{ animationDelay: `${index * 35}ms` }}
+                    >
+                      {character === " " ? "\u00A0" : character}
+                    </span>
+                  ))}
+                </span>
+              </span>
+            </Link>
           </AnimatedCard>
 
           {/* Sequência */}

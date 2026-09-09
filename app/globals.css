@@ -321,6 +321,19 @@ html.dark body > div.fixed select {
 }
 
 @layer components {
+  .roadmaps-pixel-ui *,
+  .roadmaps-character-ui * {
+    border-radius: 0 !important;
+  }
+
+  .roadmaps-pixel-ui article {
+    image-rendering: pixelated;
+  }
+
+  .roadmaps-pixel-ui .pixel-control-key {
+    border-radius: 9999px !important;
+  }
+
   .x1-screen button:not(:disabled),
   .x1-screen label:has(input:not(:disabled)) {
     cursor: pointer;
@@ -530,6 +543,26 @@ html.dark body > div.fixed select {
     background-position: -4px 0;
     filter: brightness(1);
   }
+}
+
+@keyframes roadmap-letter-reveal {
+  from {
+    color: #ffffff;
+    opacity: 0;
+  }
+  to {
+    color: #ffffff;
+    opacity: 1;
+  }
+}
+
+.group:hover .roadmap-game-message {
+  opacity: 1;
+}
+
+.group:hover .roadmap-game-letter {
+  color: #ffffff;
+  animation: roadmap-letter-reveal 1ms steps(1, end) forwards;
 }
 
 @keyframes galaxy-stars-crosswind {

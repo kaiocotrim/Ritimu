@@ -23,17 +23,10 @@ export default function DashboardLoading() {
             </div>
           </section>
 
-          <section className="h-[328px] rounded-3xl border border-black/5 bg-[#191c2a] p-6 sm:p-7">
-            <Skeleton className="h-5 w-36 rounded-full bg-white/15" />
-            <div className="mt-7 flex items-center gap-4">
-              <Skeleton className="size-16 shrink-0 rounded-2xl bg-white/15" />
-              <div className="flex-1 space-y-3">
-                <Skeleton className="h-5 w-2/3 rounded-full bg-white/15" />
-                <Skeleton className="h-4 w-1/2 rounded-full bg-white/10" />
-              </div>
-            </div>
-            <Skeleton className="mt-7 h-2 w-full rounded-full bg-white/10" />
-            <Skeleton className="mt-9 h-14 w-full rounded-2xl bg-white/15" />
+          <section className="relative aspect-[16/9] overflow-hidden rounded-3xl border border-black/5 bg-[#0a2027]">
+            <Skeleton className="absolute inset-x-[18%] top-1/2 h-4 -translate-y-5 bg-white/10" />
+            <Skeleton className="absolute inset-x-[28%] top-1/2 h-3 translate-y-2 bg-white/[.07]" />
+            <Skeleton className="absolute bottom-5 right-5 h-11 w-36 border-2 border-white/10 bg-white/[.08]" />
           </section>
 
           <section className="h-[248px] rounded-3xl border border-black/5 bg-white p-6 sm:p-7">
