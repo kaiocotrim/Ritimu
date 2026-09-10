@@ -42,6 +42,7 @@ model User {
   roadmapLessonProgress       RoadmapLessonProgress[]
   roadmapAssessmentAttempts   RoadmapAssessmentAttempt[]
   studyRoadmapsCreated        StudyRoadmap[]               @relation("RoadmapCreator")
+  certificates                Certificate[]
 
   @@unique([email])
   @@map("user")
@@ -623,6 +624,7 @@ model StudyRoadmap {
   modules            RoadmapModule[]
   enrollments        RoadmapEnrollment[]
   assessmentAttempts RoadmapAssessmentAttempt[]
+  certificates       Certificate[]
   createdAt          DateTime                   @default(now())
   updatedAt          DateTime                   @updatedAt
 
@@ -723,8 +725,9 @@ model RoadmapAssessmentAttempt {
   certificateEligible Boolean      @default(false)
   answers             Json
   startedAt           DateTime
-  submittedAt         DateTime     @default(now())
-  createdAt           DateTime     @default(now())
+  submittedAt         DateTime      @default(now())
+  createdAt           DateTime      @default(now())
+  certificates        Certificate[]
 
   @@index([userId, roadmapId, submittedAt])
   @@index([roadmapId, passed])
@@ -867,4 +870,28 @@ model CodeBattleAnswer {
   @@unique([questionId, userId])
   @@index([battleId, userId])
   @@index([questionId])
+}
+
+model Certificate {
+  id                  String                   @id @default(cuid())
+  code                String                   @unique
+  userId              String
+  user                User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmapId           String
+  roadmap             StudyRoadmap             @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  assessmentAttemptId String
+  assessmentAttempt   RoadmapAssessmentAttempt @relation(fields: [assessmentAttemptId], references: [id], onDelete: Cascade)
+  studentName         String
+  roadmapName         String
+  score               Int                      @default(50)
+  totalQuestions      Int                      @default(50)
+  percentage          Int                      @default(100)
+  issuedAt            DateTime                 @default(now())
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+
+  @@unique([userId, roadmapId])
+  @@index([userId])
+  @@index([roadmapId])
+  @@index([code])
 }

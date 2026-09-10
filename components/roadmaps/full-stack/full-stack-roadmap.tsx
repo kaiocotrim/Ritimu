@@ -36,7 +36,7 @@ const nodeLogos: Record<string, string> = {
 }
 const sectionLogos = { frontend: "logoFrontend.png", backend: "logoBackend.png", devops: "logoDevops.png" } as const
 
-export function FullStackRoadmap({ roadmapId, progress, initialResult }: { roadmapId: string; progress: NodeProgress[]; initialResult: Result | null }) {
+export function FullStackRoadmap({ roadmapId, progress, initialResult, userName }: { roadmapId: string; progress: NodeProgress[]; initialResult: Result | null; userName: string }) {
   const [selected, setSelected] = useState<FullStackNode | null>(null)
   const [completed, setCompleted] = useState(() => new Set(progress.filter((item) => item.completed).map((item) => item.key)))
   const [error, setError] = useState<string | null>(null)
@@ -145,7 +145,7 @@ export function FullStackRoadmap({ roadmapId, progress, initialResult }: { roadm
       </div>
     </RoadmapCanvas> : <FullStackListView completed={completed} category={listCategory} search={search} onSelect={(node) => { setSelected(node); setError(null) }} />}
 
-    <FullStackAssessment roadmapId={roadmapId} unlocked={unlocked} initialResult={initialResult} />
+    <FullStackAssessment roadmapId={roadmapId} unlocked={unlocked} initialResult={initialResult} userName={userName} />
     {selected && <><button type="button" aria-label="Fechar painel" onClick={() => setSelected(null)} className="fixed inset-0 z-[110] bg-[#071d23]/40" /><aside role="dialog" aria-modal="true" aria-labelledby="topic-title" className="fixed inset-y-0 right-0 z-[120] w-[min(100vw,430px)] overflow-y-auto border-l-2 border-black bg-white p-6 shadow-2xl sm:p-8">
       <div className="flex items-start justify-between gap-4"><div><p className="font-pixel text-[10px] font-bold uppercase tracking-widest text-[#299d37]">{selected.kind === "TOPIC" ? "Conceito" : "Checkpoint"}</p><h2 id="topic-title" className="font-pixel mt-2 text-2xl font-bold">{selected.title}</h2></div><button type="button" onClick={() => setSelected(null)} aria-label="Fechar painel" className="grid size-10 place-items-center border-2 border-black focus-visible:ring-4 focus-visible:ring-blue-400"><X className="size-5" /></button></div>
       <p className="mt-5 leading-7 text-black/65">{selected.description}</p>
