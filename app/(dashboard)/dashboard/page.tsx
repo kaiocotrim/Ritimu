@@ -197,7 +197,7 @@ export default async function Dashboard() {
             <GalacticParticles />
             <div className="absolute right-6 top-1/2 size-[152px] -translate-y-1/2 transition-[filter,transform] duration-1000 group-hover:brightness-110 group-hover:saturate-125">
               <Image
-                src="/BannerDashboard8.png"
+                src="/teste4545.png"
                 alt=""
                 fill
                 sizes="152px"
