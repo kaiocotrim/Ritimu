@@ -18,6 +18,11 @@ const navigationItems = [
 export function Sidebar({ variant }: { variant?: "light" | "dark" }) {
   const pathname = usePathname()
   const isRoadmapPage = pathname === "/roadmaps" || pathname.startsWith("/roadmaps/")
+
+  if (isRoadmapPage) {
+    return null
+  }
+
   const isDarkPage = variant ? variant === "dark" : pathname === "/plano-de-estudos" || pathname.startsWith("/plano-de-estudos/")
 
   return (

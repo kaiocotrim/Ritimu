@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { ensureOfficialRoadmaps } from "@/lib/roadmaps/service"
 import { readFullStackNodeMetadata } from "@/lib/roadmaps/full-stack/definition"
-import { Sidebar } from "@/components/sidebar/sidebar"
+import { RoadmapTopBar } from "@/components/roadmaps/roadmap-top-bar"
 import { SelectRoadmapButton } from "@/components/roadmaps/select-roadmap-button"
 import { CharacterSelection } from "@/components/roadmaps/character-selection"
 
@@ -43,9 +43,10 @@ export default async function RoadmapsPage() {
     </article>
   }
 
-  return <main className="roadmaps-pixel-ui min-h-screen bg-[#F6F5F1] px-5 pb-32 pt-10 text-[#111] sm:px-10 lg:px-16 xl:pl-[calc(18rem+2.5rem)]">
+  return <main className="roadmaps-pixel-ui min-h-screen bg-[#F6F5F1] px-5 pb-32 pt-6 text-[#111] sm:px-10 lg:px-16">
     <CharacterSelection />
     <div className="mx-auto max-w-6xl">
+      <RoadmapTopBar className="mb-8" />
       <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div><h1 className="font-pixel text-4xl font-bold tracking-tight sm:text-5xl">Roadmaps de estudos</h1><p className="mt-3 max-w-2xl text-base leading-7 text-black/55">Avance etapa por etapa, ganhe XP e transforme um objetivo grande em uma jornada possível.</p></div>
         <span aria-disabled="true" title="Em breve" className="font-pixel inline-flex items-center gap-2 self-start rounded-full border-2 border-violet-300 bg-violet-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-violet-700 opacity-75">IA</span>
@@ -55,6 +56,6 @@ export default async function RoadmapsPage() {
         <div className="mt-5 flex flex-wrap gap-2">{categories.map((category) => <span key={category} className="rounded-full border border-black/10 bg-white px-3 py-1.5 text-xs font-semibold text-black/60">{category}</span>)}</div>
         <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">{roadmaps.map(renderCard)}</div>
       </section>
-    </div><Sidebar />
+    </div>
   </main>
 }
