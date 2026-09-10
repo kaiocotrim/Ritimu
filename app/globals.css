@@ -744,3 +744,24 @@ main > .fixed.inset-0.z-50 > form button[type="button"]:hover {
 .dashboard-page-content [data-ritimu-sidebar] {
   display: none;
 }
+
+.roadmap-dot-grid {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.13) 1px, transparent 1.25px);
+  background-size: 20px 20px;
+}
+
+@keyframes roadmap-line-flow {
+  to {
+    stroke-dashoffset: -38;
+  }
+}
+
+.roadmap-flow-line {
+  animation: roadmap-line-flow 1.15s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roadmap-flow-line {
+    animation: none;
+  }
+}

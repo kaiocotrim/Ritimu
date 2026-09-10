@@ -1,11 +1,13 @@
 
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
-import { Check, ExternalLink, Flag, List, LoaderCircle, LockKeyhole, Map as MapIcon, Play, Search, X } from "lucide-react"
+import type { PointerEvent as ReactPointerEvent } from "react"
+import { useMemo, useRef, useState, useTransition } from "react"
+import { Check, ExternalLink, List, LoaderCircle, LockKeyhole, Map as MapIcon, Play, Search, X } from "lucide-react"
 import Image from "next/image"
 import { RoadmapCanvas } from "@/components/roadmaps/roadmap-canvas"
 import { FullStackAssessment } from "@/components/roadmaps/full-stack/full-stack-assessment"
+import { SelectedCharacterAvatar } from "@/components/roadmaps/selected-character-avatar"
 import { FULL_STACK_ROADMAP_DEFINITION, type FullStackNode } from "@/lib/roadmaps/full-stack/definition"
 import { cn } from "@/lib/utils"
 
@@ -13,6 +15,26 @@ type NodeProgress = { key: string; lessonId: string; completed: boolean }
 type Result = { correctAnswers: number; total: 50; percentage: number; passed: boolean; certificateEligible: boolean }
 type ViewMode = "map" | "list"
 type ListCategory = "all" | "frontend" | "backend" | "database" | "devops"
+type NodePosition = { x: number; y: number }
+type NodeDrag = { key: string; startX: number; startY: number; origin: NodePosition; moved: boolean }
+
+const sectionTheme = {
+  frontend: { topic: "border-blue-600 bg-blue-100 hover:bg-blue-200", checkpoint: "border-blue-500 bg-blue-950", icon: "bg-blue-600", flag: "text-blue-300", label: "border-blue-600 text-blue-800 shadow-[0_7px_16px_rgba(37,99,235,.16)]" },
+  backend: { topic: "border-green-600 bg-green-100 hover:bg-green-200", checkpoint: "border-green-500 bg-green-950", icon: "bg-green-600", flag: "text-green-300", label: "border-green-600 text-green-800 shadow-[0_7px_16px_rgba(22,163,74,.16)]" },
+  devops: { topic: "border-red-600 bg-red-100 hover:bg-red-200", checkpoint: "border-red-500 bg-red-950", icon: "bg-red-600", flag: "text-red-300", label: "border-red-600 text-red-800 shadow-[0_7px_16px_rgba(220,38,38,.16)]" },
+} as const
+
+const sectionSpacing = { frontend: 0, backend: 180, devops: 450 } as const
+const roadmapLogoBase = "/logos_recortadas_roadmap"
+const nodeLogos: Record<string, string> = {
+  html: "logoHTML.png", css: "logoCSS.png", javascript: "logoJavaScript.png", npm: "logoNpm.png", git: "logoGit.png", github: "logoGitHub.png", "tailwind-css": "logoTailwindCSS.png", react: "logoReact.png",
+  "checkpoint-static-webpages": "logoCheckpointEstiloDeWebpages.png", "checkpoint-interactivity": "logoCheckpointInteratividade.png", "checkpoint-external-packages": "logoCheckpointExternalPackages.png", "checkpoint-collaborative-work": "logoCheckpointCollaborativeWork.png", "checkpoint-frontend-apps": "logoCheckpointFrontendApps.png",
+  "node-js": "logoNodeJs.png", postgresql: "logoPostgreSQL.png", "restful-apis": "logoRESTfulAPIs.png", "jwt-auth": "logoJWTAuth.png", "orm-prisma": "logoORMPrisma.png", redis: "logoRedis.png",
+  "checkpoint-cli-apps": "logoCheckpointCLIApps.png", "checkpoint-simple-crud": "logoCheckpointSimpleCRUDApps.png", "checkpoint-complete-app": "logoCheckpointCompleteApp.png",
+  "linux-basics": "logoLinuxBasics.png", "basic-aws-services": "logoDockerContainerization.png", ec2: "logoCICD.png", vpc: "logoVPS.png", s3: "logoNginx.png", "route-53": "logoRoute53.png", ses: "logoSSL.png", monit: "logoMonitoring.png", "github-actions": "logoGitHubActions.png", ansible: "logoScalability.png", terraform: "logoTerraform.png",
+  "checkpoint-deployment": "logoCheckpointDeployments.png", "checkpoint-monitoring": "logoCheckpointMonitoring.png", "checkpoint-cicd": "logoCheckpointCICD.png", "checkpoint-automation": "logoCheckpointAutomation.png", "checkpoint-infrastructure": "logoCheckpointInfrastructure.png",
+}
+const sectionLogos = { frontend: "logoFrontend.png", backend: "logoBackend.png", devops: "logoDevops.png" } as const
 
 export function FullStackRoadmap({ roadmapId, progress, initialResult }: { roadmapId: string; progress: NodeProgress[]; initialResult: Result | null }) {
   const [selected, setSelected] = useState<FullStackNode | null>(null)
@@ -21,9 +43,56 @@ export function FullStackRoadmap({ roadmapId, progress, initialResult }: { roadm
   const [viewMode, setViewMode] = useState<ViewMode>("map")
   const [listCategory, setListCategory] = useState<ListCategory>("all")
   const [search, setSearch] = useState("")
+  const [nodePositions, setNodePositions] = useState<Record<string, NodePosition>>(() => Object.fromEntries(FULL_STACK_ROADMAP_DEFINITION.nodes.map((node) => [node.key, { x: node.position.x + sectionSpacing[node.section], y: node.position.y }])))
+  const [draggingNode, setDraggingNode] = useState<string | null>(null)
+  const nodeDrag = useRef<NodeDrag | null>(null)
   const [pending, startTransition] = useTransition()
   const lessonIds = useMemo(() => new Map(progress.map((item) => [item.key, item.lessonId])), [progress])
   const unlocked = completed.size === FULL_STACK_ROADMAP_DEFINITION.nodes.length
+  const currentNodeKey = useMemo(() => {
+    const next = FULL_STACK_ROADMAP_DEFINITION.nodes.find((node) => {
+      if (completed.has(node.key)) return false
+      const prerequisites = FULL_STACK_ROADMAP_DEFINITION.edges.filter((edge) => edge.to === node.key).map((edge) => edge.from)
+      return prerequisites.length === 0 || prerequisites.every((key) => completed.has(key))
+    })
+    return next?.key ?? FULL_STACK_ROADMAP_DEFINITION.nodes.at(-1)?.key
+  }, [completed])
+
+  function beginNodeDrag(event: ReactPointerEvent<HTMLButtonElement>, node: FullStackNode) {
+    if (event.button !== 0) return
+    event.stopPropagation()
+    const position = nodePositions[node.key]
+    nodeDrag.current = { key: node.key, startX: event.clientX, startY: event.clientY, origin: position, moved: false }
+    setDraggingNode(node.key)
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  function moveNode(event: ReactPointerEvent<HTMLButtonElement>) {
+    const drag = nodeDrag.current
+    if (!drag) return
+    event.stopPropagation()
+    const scale = event.currentTarget.getBoundingClientRect().width / event.currentTarget.offsetWidth
+    const dx = (event.clientX - drag.startX) / scale
+    const dy = (event.clientY - drag.startY) / scale
+    if (Math.abs(dx) + Math.abs(dy) > 5) drag.moved = true
+    setNodePositions((current) => ({ ...current, [drag.key]: {
+      x: drag.origin.x + dx,
+      y: drag.origin.y + dy,
+    } }))
+  }
+
+  function endNodeDrag(event: ReactPointerEvent<HTMLButtonElement>, node: FullStackNode) {
+    const drag = nodeDrag.current
+    if (!drag || drag.key !== node.key) return
+    event.stopPropagation()
+    event.currentTarget.releasePointerCapture(event.pointerId)
+    nodeDrag.current = null
+    setDraggingNode(null)
+    if (!drag.moved) {
+      setSelected(node)
+      setError(null)
+    }
+  }
 
   function complete() {
     if (!selected || completed.has(selected.key)) return
@@ -49,29 +118,35 @@ export function FullStackRoadmap({ roadmapId, progress, initialResult }: { roadm
     <RoadmapViewToolbar viewMode={viewMode} onViewModeChange={setViewMode} category={listCategory} onCategoryChange={setListCategory} search={search} onSearchChange={setSearch} />
 
     {viewMode === "map" ? <RoadmapCanvas width={FULL_STACK_ROADMAP_DEFINITION.width} height={FULL_STACK_ROADMAP_DEFINITION.height}>
-      <div className="relative h-full w-full bg-[radial-gradient(#d7dce2_1px,transparent_1px)] bg-size-[18px_18px]">
-        <SectionLabel title="Frontend" x={40} /><SectionLabel title="Backend" x={650} /><SectionLabel title="DevOps" x={1100} />
+      <div className="relative h-full w-full bg-transparent">
+        <SectionLabel title="Frontend" section="frontend" x={230} /><SectionLabel title="Backend" section="backend" x={970} /><SectionLabel title="DevOps" section="devops" x={1865} />
         <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
           <defs><marker id="full-stack-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2878ff" /></marker></defs>
-          {FULL_STACK_ROADMAP_DEFINITION.edges.map((edge) => {
+          {FULL_STACK_ROADMAP_DEFINITION.edges.map((edge, index) => {
             const from = FULL_STACK_ROADMAP_DEFINITION.nodes.find((node) => node.key === edge.from)!
             const to = FULL_STACK_ROADMAP_DEFINITION.nodes.find((node) => node.key === edge.to)!
-            const center = (node: FullStackNode) => ({ x: node.position.x + (node.kind === "CHECKPOINT" ? 105 : 85), y: node.position.y + 31 })
+            const center = (node: FullStackNode) => ({ x: nodePositions[node.key].x + (node.kind === "CHECKPOINT" ? 105 : 85), y: nodePositions[node.key].y + 28 })
             const a = center(from), b = center(to), midY = a.y + (b.y - a.y) / 2
-            return <path key={`${edge.from}-${edge.to}`} d={`M ${a.x} ${a.y} L ${a.x} ${midY} L ${b.x} ${midY} L ${b.x} ${b.y}`} fill="none" stroke="#2878ff" strokeWidth="3" strokeDasharray={edge.style === "dashed" ? "8 7" : undefined} markerEnd="url(#full-stack-arrow)" />
+            const path = `M ${a.x} ${a.y} L ${a.x} ${midY} L ${b.x} ${midY} L ${b.x} ${b.y}`
+            return <g key={`${edge.from}-${edge.to}`}>
+              <path d={path} fill="none" stroke="#1473ff" strokeWidth="2" strokeDasharray={edge.style === "dashed" ? "7 6" : undefined} />
+              <path className="roadmap-flow-line" d={path} fill="none" stroke="#8fc0ff" strokeWidth="3" strokeLinecap="round" strokeDasharray="3 16" style={{ animationDelay: `${index * -90}ms` }} />
+            </g>
           })}
         </svg>
         {FULL_STACK_ROADMAP_DEFINITION.nodes.map((node) => {
           const done = completed.has(node.key)
-          return <button key={node.key} type="button" onClick={() => { setSelected(node); setError(null) }} aria-label={`${node.title}. ${done ? "Concluído. Abrir para revisar" : "Abrir conteúdo"}`} className={cn("font-pixel absolute z-10 flex min-h-15 items-center justify-center gap-2 border-2 border-[#172017] px-3 py-2 text-center text-[11px] font-bold leading-4 shadow-[3px_3px_0_#172017] outline-none transition hover:-translate-y-0.5 focus-visible:ring-4 focus-visible:ring-blue-400", node.kind === "TOPIC" ? "w-42.5 bg-[#ffe46b] hover:bg-[#fff09b]" : "w-52.5 bg-[#172017] text-white", done && (node.kind === "TOPIC" ? "bg-[#dff7df]" : "ring-4 ring-[#50d05c]"))} style={{ left: node.position.x, top: node.position.y }}>
-            {node.kind === "CHECKPOINT" && <Flag className="size-4 shrink-0" />}{done && <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#299d37] text-white" aria-label="Concluído"><Check className="size-3" /></span>}<span>{node.title}</span>
+          const theme = sectionTheme[node.section]
+          return <button key={node.key} type="button" onPointerDown={(event) => beginNodeDrag(event, node)} onPointerMove={moveNode} onPointerUp={(event) => endNodeDrag(event, node)} onPointerCancel={(event) => endNodeDrag(event, node)} onClick={(event) => { if (event.detail === 0) { setSelected(node); setError(null) } }} aria-label={`${node.title}. ${done ? "Concluído. Arraste para mover ou clique para revisar" : "Arraste para mover ou clique para abrir"}`} className={cn("font-pixel absolute z-10 flex min-h-14 cursor-move touch-none items-center justify-center gap-3 rounded-sm border px-3 py-2 text-center text-[10px] font-bold leading-4 outline-none shadow-[0_8px_18px_rgba(20,35,55,.14)] transition-[box-shadow,background-color,border-color] focus-visible:ring-4 focus-visible:ring-blue-400", node.kind === "TOPIC" ? cn("w-42.5", theme.topic) : cn("w-52.5 border-2 text-white", theme.checkpoint), done && "ring-2 ring-white/80", draggingNode === node.key && "z-30 cursor-grabbing ring-4 ring-blue-400 shadow-[0_14px_28px_rgba(20,115,255,.28)]")} style={{ left: nodePositions[node.key].x, top: nodePositions[node.key].y }}>
+            {currentNodeKey === node.key && <span className="pointer-events-none absolute -top-15 left-1/2 z-40 flex -translate-x-1/2 flex-col items-center"><span className="mb-0.5 whitespace-nowrap rounded-full bg-[#071d31] px-2 py-1 text-[7px] uppercase tracking-wide text-white shadow-sm">Você está aqui</span><span className="relative size-12 drop-shadow-[0_4px_2px_rgba(0,0,0,.28)]"><SelectedCharacterAvatar alt="Seu personagem na etapa atual" fill sizes="48px" className="object-contain" /></span></span>}
+            <Image src={`${roadmapLogoBase}/${nodeLogos[node.key]}`} alt="" width={48} height={48} draggable={false} className={cn("shrink-0 object-contain", node.kind === "TOPIC" ? "size-9" : "h-10 w-12")} />{done && node.kind === "CHECKPOINT" && <span className="sr-only">Concluído</span>}<span>{node.title}</span>
           </button>
         })}
       </div>
     </RoadmapCanvas> : <FullStackListView completed={completed} category={listCategory} search={search} onSelect={(node) => { setSelected(node); setError(null) }} />}
 
     <FullStackAssessment roadmapId={roadmapId} unlocked={unlocked} initialResult={initialResult} />
-    {selected && <><button type="button" aria-label="Fechar painel" onClick={() => setSelected(null)} className="fixed inset-0 z-40 bg-[#071d23]/40" /><aside role="dialog" aria-modal="true" aria-labelledby="topic-title" className="fixed inset-y-0 right-0 z-50 w-[min(100vw,430px)] overflow-y-auto border-l-2 border-black bg-white p-6 shadow-2xl sm:p-8">
+    {selected && <><button type="button" aria-label="Fechar painel" onClick={() => setSelected(null)} className="fixed inset-0 z-[110] bg-[#071d23]/40" /><aside role="dialog" aria-modal="true" aria-labelledby="topic-title" className="fixed inset-y-0 right-0 z-[120] w-[min(100vw,430px)] overflow-y-auto border-l-2 border-black bg-white p-6 shadow-2xl sm:p-8">
       <div className="flex items-start justify-between gap-4"><div><p className="font-pixel text-[10px] font-bold uppercase tracking-widest text-[#299d37]">{selected.kind === "TOPIC" ? "Conceito" : "Checkpoint"}</p><h2 id="topic-title" className="font-pixel mt-2 text-2xl font-bold">{selected.title}</h2></div><button type="button" onClick={() => setSelected(null)} aria-label="Fechar painel" className="grid size-10 place-items-center border-2 border-black focus-visible:ring-4 focus-visible:ring-blue-400"><X className="size-5" /></button></div>
       <p className="mt-5 leading-7 text-black/65">{selected.description}</p>
       {selected.resources.length > 0 && <section className="mt-7"><h3 className="font-pixel text-xs font-bold uppercase tracking-wider">Recursos gratuitos</h3><div className="mt-3 space-y-3">{selected.resources.map((resource) => <a key={resource.url} href={resource.url} target="_blank" rel="noopener noreferrer" className="group block border-2 border-black/15 p-4 transition hover:border-[#2878ff] focus-visible:ring-4 focus-visible:ring-blue-400"><span className="font-pixel text-[9px] font-bold uppercase text-blue-700">{resource.provider} · {resource.kind}</span><strong className="font-pixel mt-2 flex items-center justify-between gap-3 text-xs leading-5">{resource.title}<ExternalLink className="size-4 shrink-0" /></strong></a>)}</div></section>}
@@ -83,8 +158,8 @@ export function FullStackRoadmap({ roadmapId, progress, initialResult }: { roadm
   </div>
 }
 
-function SectionLabel({ title, x }: { title: string; x: number }) {
-  return <div className="font-pixel absolute top-5 z-20 border-2 border-[#172017] bg-white px-5 py-2 text-sm font-bold uppercase shadow-[3px_3px_0_#2878ff]" style={{ left: x }}>{title}</div>
+function SectionLabel({ title, section, x }: { title: string; section: FullStackNode["section"]; x: number }) {
+  return <div className={cn("absolute top-2 z-20 w-45 rounded-md border-2 bg-white px-3 py-2", sectionTheme[section].label)} style={{ left: x }}><Image src={`${roadmapLogoBase}/${sectionLogos[section]}`} alt={title} width={180} height={54} draggable={false} className="h-9 w-full object-contain" /></div>
 }
 
 const listGroups = [
@@ -155,8 +230,8 @@ function FullStackListView({ completed, category, search, onSelect }: { complete
           const StatusIcon = done ? Check : available ? Play : LockKeyhole
           return <div key={node.key} className="relative pb-6 last:pb-0">
             {index < group.nodes.length - 1 && <span aria-hidden="true" className={cn("absolute left-1/2 top-full h-6 -translate-x-1/2 -translate-y-6 border-l-2", available ? "border-solid border-blue-500" : "border-dashed border-black/35")}><span className="absolute -bottom-0.5 -left-1 text-[10px] text-blue-600">↓</span></span>}
-            <button type="button" onClick={() => onSelect(node)} aria-label={`${node.title}. ${done ? "Concluído. Abrir para revisar" : "Abrir conteúdo"}`} className={cn("group flex min-h-12 w-full items-center gap-3 rounded-md border px-3 py-2 text-left shadow-sm outline-none transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-4 focus-visible:ring-blue-300", done ? "border-green-500 bg-green-50" : available ? "border-blue-500 bg-white" : "border-black/15 bg-[#f2f3f3] text-black/60")}>
-              <span className={cn("grid size-6 shrink-0 place-items-center rounded text-white", done ? "bg-green-600" : available ? "bg-blue-600" : "bg-slate-500")}><StatusIcon className="size-3.5" /></span><span className="font-pixel min-w-0 flex-1 text-[10px] font-bold leading-4">{node.title}</span>{done && <Check className="size-4 shrink-0 text-green-600" />}{node.kind === "CHECKPOINT" && !done && <Flag className="size-3.5 shrink-0 text-black/35" />}
+            <button type="button" onClick={() => onSelect(node)} aria-label={`${node.title}. ${done ? "Concluído. Abrir para revisar" : "Abrir conteúdo"}`} className={cn("group flex min-h-14 w-full items-center gap-3 rounded-md border px-3 py-2 text-left shadow-sm outline-none transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-4 focus-visible:ring-blue-300", done ? "border-green-500 bg-green-50" : available ? "border-blue-500 bg-white" : "border-black/15 bg-[#f2f3f3] text-black/60")}>
+              <Image src={`${roadmapLogoBase}/${nodeLogos[node.key]}`} alt="" width={44} height={44} className="size-10 shrink-0 object-contain" /><span className="font-pixel min-w-0 flex-1 text-[10px] font-bold leading-4">{node.title}</span><span className={cn("grid size-6 shrink-0 place-items-center rounded text-white", done ? "bg-green-600" : available ? "bg-blue-600" : "bg-slate-500")} aria-hidden="true"><StatusIcon className="size-3.5" /></span>
             </button>
           </div>
         })}</div>

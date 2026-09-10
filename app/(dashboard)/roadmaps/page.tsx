@@ -47,7 +47,7 @@ export default async function RoadmapsPage() {
     <CharacterSelection />
     <div className="mx-auto max-w-6xl">
       <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div><div className="font-pixel mb-3 inline-flex items-center gap-2 rounded-lg border border-[#299d37] bg-[#e4f8e6] px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[#299d37]"><MapIcon className="size-4" /> Trilhas Ritimu</div><h1 className="font-pixel text-4xl font-bold tracking-tight sm:text-5xl">Roadmaps de estudos</h1><p className="mt-3 max-w-2xl text-base leading-7 text-black/55">Avance etapa por etapa, ganhe XP e transforme um objetivo grande em uma jornada possível.</p></div>
+        <div><h1 className="font-pixel text-4xl font-bold tracking-tight sm:text-5xl">Roadmaps de estudos</h1><p className="mt-3 max-w-2xl text-base leading-7 text-black/55">Avance etapa por etapa, ganhe XP e transforme um objetivo grande em uma jornada possível.</p></div>
         <span aria-disabled="true" title="Em breve" className="font-pixel inline-flex items-center gap-2 self-start rounded-full border-2 border-violet-300 bg-violet-50 px-5 py-3 text-xs font-bold uppercase tracking-wider text-violet-700 opacity-75">IA</span>
       </header>
       {selectedRoadmaps.length > 0 && <section className="mt-10"><h2 className="font-pixel text-xl font-bold">Minhas trilhas</h2><p className="mt-1 text-sm text-black/50">Continue de onde parou.</p><div className="mt-5 grid gap-5 md:grid-cols-2">{selectedRoadmaps.map(renderCard)}</div></section>}
