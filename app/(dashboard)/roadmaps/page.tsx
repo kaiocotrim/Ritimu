@@ -4,6 +4,7 @@ import { BookOpen, Clock3, Map as MapIcon, Sparkles } from "lucide-react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { ensureOfficialRoadmaps } from "@/lib/roadmaps/service"
+import { readFullStackNodeMetadata } from "@/lib/roadmaps/full-stack/definition"
 import { Sidebar } from "@/components/sidebar/sidebar"
 import { SelectRoadmapButton } from "@/components/roadmaps/select-roadmap-button"
 import { CharacterSelection } from "@/components/roadmaps/character-selection"
@@ -13,11 +14,11 @@ export default async function RoadmapsPage() {
   if (!session) redirect("/login")
   await ensureOfficialRoadmaps()
   const roadmaps = await prisma.studyRoadmap.findMany({
-    where: { OR: [{ isPublic: true }, { creatorId: session.user.id }] },
+    where: { slug: "full-stack-developer", OR: [{ isPublic: true }, { creatorId: session.user.id }] },
     orderBy: [{ isOfficial: "desc" }, { title: "asc" }],
     select: {
-      id: true, title: true, description: true, category: true, difficulty: true, estimatedHours: true, isOfficial: true,
-      modules: { select: { _count: { select: { lessons: true } } } },
+      id: true, slug: true, title: true, description: true, category: true, difficulty: true, estimatedHours: true, isOfficial: true,
+      modules: { select: { lessons: { select: { id: true, sourceMetadata: true } } } },
       enrollments: { where: { userId: session.user.id }, select: { id: true } },
     },
   })
@@ -25,15 +26,13 @@ export default async function RoadmapsPage() {
     by: ["lessonId"], where: { userId: session.user.id, status: "COMPLETED" }, _count: true,
   })
   const completedIds = new Set(completedByRoadmap.map((item) => item.lessonId))
-  const lessonRoadmaps = await prisma.roadmapLesson.findMany({ where: { id: { in: [...completedIds] } }, select: { id: true, module: { select: { roadmapId: true } } } })
-  const counts = new Map<string, number>()
-  lessonRoadmaps.forEach((item) => counts.set(item.module.roadmapId, (counts.get(item.module.roadmapId) ?? 0) + 1))
   const selectedRoadmaps = roadmaps.filter((roadmap) => roadmap.enrollments.length > 0)
   const categories = [...new Set(roadmaps.map((roadmap) => roadmap.category))]
 
   const renderCard = (roadmap: (typeof roadmaps)[number]) => {
-    const total = roadmap.modules.reduce((sum, module) => sum + module._count.lessons, 0)
-    const done = counts.get(roadmap.id) ?? 0
+    const lessons = roadmap.modules.flatMap((module) => module.lessons).filter((lesson) => roadmap.slug !== "full-stack-developer" || readFullStackNodeMetadata(lesson.sourceMetadata))
+    const total = lessons.length
+    const done = lessons.filter((lesson) => completedIds.has(lesson.id)).length
     const percent = total ? Math.round(done / total * 100) : 0
     const selected = roadmap.enrollments.length > 0
     return <article key={roadmap.id} className="relative overflow-hidden border-2 border-[#172017] bg-white p-6 shadow-[5px_5px_0_#c18b2f] transition hover:-translate-y-1 hover:shadow-[7px_7px_0_#45b950] sm:p-7">

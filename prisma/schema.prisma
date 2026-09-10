@@ -40,6 +40,7 @@ model User {
   codeBattleAnswers           CodeBattleAnswer[]
   roadmapEnrollments          RoadmapEnrollment[]
   roadmapLessonProgress       RoadmapLessonProgress[]
+  roadmapAssessmentAttempts   RoadmapAssessmentAttempt[]
   studyRoadmapsCreated        StudyRoadmap[]               @relation("RoadmapCreator")
 
   @@unique([email])
@@ -605,24 +606,25 @@ enum RoadmapOrigin {
 }
 
 model StudyRoadmap {
-  id             String              @id @default(cuid())
-  creatorId      String?
-  creator        User?               @relation("RoadmapCreator", fields: [creatorId], references: [id], onDelete: SetNull)
-  title          String
-  slug           String              @unique
-  description    String
-  category       String
-  difficulty     RoadmapDifficulty   @default(BEGINNER)
-  estimatedHours Int
-  origin         RoadmapOrigin       @default(OFFICIAL)
-  isOfficial     Boolean             @default(false)
-  isPublic       Boolean             @default(false)
-  logo           String?
-  sourceMetadata Json?
-  modules        RoadmapModule[]
-  enrollments    RoadmapEnrollment[]
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  id                 String                     @id @default(cuid())
+  creatorId          String?
+  creator            User?                      @relation("RoadmapCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  title              String
+  slug               String                     @unique
+  description        String
+  category           String
+  difficulty         RoadmapDifficulty          @default(BEGINNER)
+  estimatedHours     Int
+  origin             RoadmapOrigin              @default(OFFICIAL)
+  isOfficial         Boolean                    @default(false)
+  isPublic           Boolean                    @default(false)
+  logo               String?
+  sourceMetadata     Json?
+  modules            RoadmapModule[]
+  enrollments        RoadmapEnrollment[]
+  assessmentAttempts RoadmapAssessmentAttempt[]
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
 
   @@index([isPublic, category])
   @@index([creatorId])
@@ -706,6 +708,26 @@ model RoadmapLessonProgress {
   @@unique([userId, lessonId])
   @@index([userId, status])
   @@index([lessonId])
+}
+
+model RoadmapAssessmentAttempt {
+  id                  String       @id @default(cuid())
+  userId              String
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmapId           String
+  roadmap             StudyRoadmap @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  correctAnswers      Int
+  total               Int
+  percentage          Int
+  passed              Boolean
+  certificateEligible Boolean      @default(false)
+  answers             Json
+  startedAt           DateTime
+  submittedAt         DateTime     @default(now())
+  createdAt           DateTime     @default(now())
+
+  @@index([userId, roadmapId, submittedAt])
+  @@index([roadmapId, passed])
 }
 
 enum CodeBattleRoomStatus {

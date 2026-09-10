@@ -1,0 +1,1 @@
+ALTER TABLE "StudyRoadmap" ADD COLUMN IF NOT EXISTS "logo" TEXT;
