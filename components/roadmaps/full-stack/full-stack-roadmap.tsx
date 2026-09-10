@@ -1,7 +1,9 @@
+
 "use client"
 
 import { useMemo, useState, useTransition } from "react"
-import { Check, Cloud, Database, ExternalLink, Flag, List, LoaderCircle, LockKeyhole, Map as MapIcon, Monitor, Play, Search, Server, X } from "lucide-react"
+import { Check, ExternalLink, Flag, List, LoaderCircle, LockKeyhole, Map as MapIcon, Play, Search, X } from "lucide-react"
+import Image from "next/image"
 import { RoadmapCanvas } from "@/components/roadmaps/roadmap-canvas"
 import { FullStackAssessment } from "@/components/roadmaps/full-stack/full-stack-assessment"
 import { FULL_STACK_ROADMAP_DEFINITION, type FullStackNode } from "@/lib/roadmaps/full-stack/definition"
@@ -86,10 +88,10 @@ function SectionLabel({ title, x }: { title: string; x: number }) {
 }
 
 const listGroups = [
-  { key: "frontend" as const, title: "Frontend", subtitle: "Interface e experiência", icon: Monitor, accent: "text-blue-600", panel: "from-blue-50 to-blue-50/30", border: "border-blue-200" },
-  { key: "backend" as const, title: "Backend", subtitle: "Servidor e APIs", icon: Server, accent: "text-violet-600", panel: "from-violet-50 to-violet-50/30", border: "border-violet-200" },
-  { key: "database" as const, title: "Banco de dados", subtitle: "Persistência e cache", icon: Database, accent: "text-amber-600", panel: "from-amber-50 to-amber-50/30", border: "border-amber-200" },
-  { key: "devops" as const, title: "DevOps", subtitle: "Cloud e automação", icon: Cloud, accent: "text-red-500", panel: "from-red-50 to-red-50/30", border: "border-red-200" },
+  { key: "frontend" as const, title: "Frontend", subtitle: "Interface e experiência", icon: "/logoDosConceitos/FT1.png", accent: "text-blue-600", panel: "from-blue-50 to-blue-50/30", border: "border-blue-200" },
+  { key: "backend" as const, title: "Backend", subtitle: "Servidor e APIs", icon: "/logoDosConceitos/BK1.png", accent: "text-violet-600", panel: "from-violet-50 to-violet-50/30", border: "border-violet-200" },
+  { key: "database" as const, title: "Banco de dados", subtitle: "Persistência e cache", icon: "/logoDosConceitos/SGBD1.png", accent: "text-amber-600", panel: "from-amber-50 to-amber-50/30", border: "border-amber-200" },
+  { key: "devops" as const, title: "DevOps", subtitle: "Cloud e automação", icon: "/logoDosConceitos/NV1.png", accent: "text-red-500", panel: "from-red-50 to-red-50/30", border: "border-red-200" },
 ]
 
 function nodeListCategory(node: FullStackNode): Exclude<ListCategory, "all"> {
@@ -135,10 +137,17 @@ function FullStackListView({ completed, category, search, onSelect }: { complete
 
   return <section aria-label="Roadmap Full Stack em lista" className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-4">
     {groups.map((group) => {
-      const Icon = group.icon
       const doneCount = group.nodes.filter((node) => completed.has(node.key)).length
       return <article key={group.key} className={cn("rounded-xl border bg-gradient-to-b p-4", group.panel, group.border)}>
-        <header className="mb-5 flex items-center gap-3"><span className={cn("grid size-10 place-items-center rounded-lg bg-white shadow-sm", group.accent)}><Icon className="size-5" /></span><div><h3 className="font-pixel text-xs font-bold uppercase">{group.title}</h3><p className="mt-0.5 text-xs text-black/45">{doneCount}/{group.nodes.length} etapas</p></div></header>
+        <header className="mb-5 flex items-center gap-3">
+          <span className="grid size-10 place-items-center rounded-lg bg-white shadow-sm">
+            <Image src={group.icon} alt={group.title} width={24} height={24} className="size-6 object-contain" />
+          </span>
+          <div>
+            <h3 className="font-pixel text-xs font-bold uppercase">{group.title}</h3>
+            <p className="mt-0.5 text-xs text-black/45">{doneCount}/{group.nodes.length} etapas</p>
+          </div>
+        </header>
         <div className="space-y-0">{group.nodes.map((node, index) => {
           const done = completed.has(node.key)
           const prerequisites = FULL_STACK_ROADMAP_DEFINITION.edges.filter((edge) => edge.to === node.key).map((edge) => edge.from)

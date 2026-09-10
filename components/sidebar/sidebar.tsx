@@ -63,7 +63,7 @@ export function Sidebar({ variant }: { variant?: "light" | "dark" }) {
           </Link>
         )
       })}
-      {isRoadmapPage && <div className="relative mt-auto hidden min-h-22 overflow-hidden border-2 border-[#75e8dc]/35 bg-[#041832] shadow-[4px_4px_0_rgba(0,8,16,.55)] xl:block"><p className="font-pixel relative z-10 px-4 py-5 text-[11px] font-bold uppercase leading-5 tracking-wider text-[#a0ffc5] drop-shadow-[0_1px_2px_rgba(0,20,28,.8)]">Disciplina hoje<br />constrói o seu amanhã.</p></div>}
+      {isRoadmapPage && <div className="relative mt-auto hidden min-h-22 overflow-hidden border-2 border-[#75e8dc]/35 bg- shadow-[4px_4px_0_rgba(0,8,16,.55)] xl:block"><p className="font-pixel relative z-10 px-4 py-5 text-[11px] font-bold uppercase leading-5 tracking-wider text-[#a0ffc5] drop-shadow-[0_1px_2px_rgba(0,20,28,.8)]">Disciplina hoje<br />constrói o seu amanhã.</p></div>}
     </nav>
   )
 }
