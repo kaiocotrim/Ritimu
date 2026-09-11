@@ -756,6 +756,20 @@ main > .fixed.inset-0.z-50 > form button[type="button"]:hover {
   }
 }
 
+@keyframes character-roulette-spin {
+  0% { transform: translateX(0); }
+  75% { transform: translateX(-1450px); }
+  100% { transform: translateX(-1664px); }
+}
+
+.character-roulette-track {
+  animation: character-roulette-spin 3.5s cubic-bezier(.12,.72,.18,1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character-roulette-track { animation-duration: .01ms; }
+}
+
 .roadmap-flow-line {
   animation: roadmap-line-flow 1.15s linear infinite;
 }

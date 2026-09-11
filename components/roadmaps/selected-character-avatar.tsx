@@ -30,7 +30,7 @@ function subscribe(onChange: () => void) {
   }
 }
 
-export function SelectedCharacterAvatar({ fallbackSrc = "/personagens_ritimu_png/cavaleiro.png", alt = "Avatar do personagem", fill = false, sizes, className }: {
+export function SelectedCharacterAvatar({ fallbackSrc = "/personagens_ritimu_png/ritimu_boy.png", alt = "Avatar do personagem", fill = false, sizes, className }: {
   fallbackSrc?: string | null
   alt?: string
   fill?: boolean
