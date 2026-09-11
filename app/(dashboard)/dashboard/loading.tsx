@@ -1,3 +1,5 @@
+import { RoadmapCardSkeleton } from "@/components/dashboard/roadmap-card-skeleton"
+
 function Skeleton({ className }: { className: string }) {
   return <div aria-hidden="true" className={`bg-black/[.07] ${className}`} />
 }
@@ -23,11 +25,7 @@ export default function DashboardLoading() {
             </div>
           </section>
 
-          <section className="relative aspect-[16/9] overflow-hidden rounded-3xl border border-black/5 bg-[#0a2027]">
-            <Skeleton className="absolute inset-x-[18%] top-1/2 h-4 -translate-y-5 bg-white/10" />
-            <Skeleton className="absolute inset-x-[28%] top-1/2 h-3 translate-y-2 bg-white/[.07]" />
-            <Skeleton className="absolute bottom-5 right-5 h-11 w-36 border-2 border-white/10 bg-white/[.08]" />
-          </section>
+          <section className="relative aspect-[16/9] overflow-hidden rounded-3xl border border-black/5 bg-[#0a2027]"><RoadmapCardSkeleton /></section>
 
           <section className="h-[248px] rounded-3xl border border-black/5 bg-white p-6 sm:p-7">
             <div className="flex items-center justify-between">

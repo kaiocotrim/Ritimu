@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
+import { RoadmapCardSkeleton } from "@/components/dashboard/roadmap-card-skeleton"
 
 const frames = Array.from(
   { length: 20 },
@@ -44,14 +45,7 @@ export function RoadmapFrameAnimation() {
   return (
     <div ref={containerRef} className="absolute inset-0 transition-transform duration-1000 ease-in-out group-hover:scale-[1.02]">
       {!firstFrameReady && (
-        <div
-          className="absolute inset-0 z-10 overflow-hidden bg-[#0a2027] animate-pulse motion-reduce:animate-none"
-          aria-hidden="true"
-        >
-          <div className="absolute inset-x-[18%] top-1/2 h-4 -translate-y-5 bg-white/10" />
-          <div className="absolute inset-x-[28%] top-1/2 h-3 translate-y-2 bg-white/[.07]" />
-          <div className="absolute bottom-5 right-5 h-11 w-36 border-2 border-white/10 bg-white/[.08]" />
-        </div>
+        <div className="absolute inset-0 z-10"><RoadmapCardSkeleton /></div>
       )}
       {frames.map((frame, index) => (
         <Image
