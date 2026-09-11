@@ -20,7 +20,7 @@ export interface PublicCertificateData {
 
 /**
  * Issues a certificate idempotently.
- * Validates that the user has a valid 50/50 attempt on the server.
+ * Validates on the server that the user reached the 90% passing threshold.
  */
 export async function issueCertificate({
   userId,
@@ -61,7 +61,6 @@ export async function issueCertificate({
     where: {
       userId,
       roadmapId,
-      certificateEligible: true,
       correctAnswers: { gte: FULL_STACK_CERTIFICATE_CORRECT },
       total: FULL_STACK_ASSESSMENT_TOTAL,
     },

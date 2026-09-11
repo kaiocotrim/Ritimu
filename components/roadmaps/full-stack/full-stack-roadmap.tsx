@@ -5,8 +5,8 @@ import type { PointerEvent as ReactPointerEvent } from "react"
 import { useMemo, useRef, useState, useTransition } from "react"
 import { Check, ExternalLink, List, LoaderCircle, LockKeyhole, Map as MapIcon, Play, Search, X } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
 import { RoadmapCanvas } from "@/components/roadmaps/roadmap-canvas"
-import { FullStackAssessment } from "@/components/roadmaps/full-stack/full-stack-assessment"
 import { SelectedCharacterAvatar } from "@/components/roadmaps/selected-character-avatar"
 import { FULL_STACK_ROADMAP_DEFINITION, type FullStackNode } from "@/lib/roadmaps/full-stack/definition"
 import { cn } from "@/lib/utils"
@@ -36,7 +36,7 @@ const nodeLogos: Record<string, string> = {
 }
 const sectionLogos = { frontend: "logoFrontend.png", backend: "logoBackend.png", devops: "logoDevops.png" } as const
 
-export function FullStackRoadmap({ roadmapId, progress, initialResult, userName }: { roadmapId: string; progress: NodeProgress[]; initialResult: Result | null; userName: string }) {
+export function FullStackRoadmap({ roadmapId, progress, initialResult }: { roadmapId: string; progress: NodeProgress[]; initialResult: Result | null }) {
   const [selected, setSelected] = useState<FullStackNode | null>(null)
   const [completed, setCompleted] = useState(() => new Set(progress.filter((item) => item.completed).map((item) => item.key)))
   const [error, setError] = useState<string | null>(null)
@@ -145,7 +145,10 @@ export function FullStackRoadmap({ roadmapId, progress, initialResult, userName 
       </div>
     </RoadmapCanvas> : <FullStackListView completed={completed} category={listCategory} search={search} onSelect={(node) => { setSelected(node); setError(null) }} />}
 
-    <FullStackAssessment roadmapId={roadmapId} unlocked={unlocked} initialResult={initialResult} userName={userName} />
+    <section className="border-2 border-[#172017] bg-white p-6 shadow-[5px_5px_0_#2878ff] sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-8">
+      <div><p className="font-pixel text-[10px] font-bold uppercase tracking-widest text-blue-600">Avaliação final</p><h2 className="font-pixel mt-2 text-2xl font-bold">Prova Full Stack Developer</h2><p className="mt-2 text-sm text-black/55">A avaliação será realizada em uma página exclusiva, sem distrações.</p>{initialResult && <p className="font-pixel mt-3 text-xs font-bold text-green-700">Último resultado: {initialResult.correctAnswers}/50 · {initialResult.percentage}%</p>}</div>
+      {unlocked ? <Link href={`/roadmaps/${roadmapId}/avaliacao`} className="font-pixel mt-5 inline-flex shrink-0 items-center justify-center gap-2 border-2 border-black bg-[#ffe46b] px-5 py-3 text-xs font-bold uppercase shadow-[3px_3px_0_#111] transition-transform hover:-translate-y-0.5 sm:mt-0">{initialResult ? "Ver avaliação" : "Realizar prova"}</Link> : <span className="font-pixel mt-5 inline-flex shrink-0 border-2 border-black/15 bg-black/5 px-5 py-3 text-[10px] font-bold uppercase text-black/40 sm:mt-0">Conclua 100% da trilha</span>}
+    </section>
     {selected && <><button type="button" aria-label="Fechar painel" onClick={() => setSelected(null)} className="fixed inset-0 z-[110] bg-[#071d23]/40" /><aside role="dialog" aria-modal="true" aria-labelledby="topic-title" className="fixed inset-y-0 right-0 z-[120] w-[min(100vw,430px)] overflow-y-auto border-l-2 border-black bg-white p-6 shadow-2xl sm:p-8">
       <div className="flex items-start justify-between gap-4"><div><p className="font-pixel text-[10px] font-bold uppercase tracking-widest text-[#299d37]">{selected.kind === "TOPIC" ? "Conceito" : "Checkpoint"}</p><h2 id="topic-title" className="font-pixel mt-2 text-2xl font-bold">{selected.title}</h2></div><button type="button" onClick={() => setSelected(null)} aria-label="Fechar painel" className="grid size-10 place-items-center border-2 border-black focus-visible:ring-4 focus-visible:ring-blue-400"><X className="size-5" /></button></div>
       <p className="mt-5 leading-7 text-black/65">{selected.description}</p>
@@ -203,6 +206,7 @@ function RoadmapViewToolbar({ viewMode, onViewModeChange, category, onCategoryCh
 
 function FullStackListView({ completed, category, search, onSelect }: { completed: ReadonlySet<string>; category: ListCategory; search: string; onSelect: (node: FullStackNode) => void }) {
   const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR")
+  const singleCategory = category !== "all"
   const groups = listGroups.filter((group) => category === "all" || category === group.key).map((group) => ({
     ...group,
     nodes: FULL_STACK_ROADMAP_DEFINITION.nodes.filter((node) => nodeListCategory(node) === group.key && (!normalizedSearch || `${node.title} ${node.description}`.toLocaleLowerCase("pt-BR").includes(normalizedSearch))),
@@ -210,27 +214,29 @@ function FullStackListView({ completed, category, search, onSelect }: { complete
 
   if (groups.length === 0) return <div className="rounded-xl border-2 border-dashed border-black/15 bg-white px-6 py-16 text-center"><Search className="mx-auto size-7 text-black/25" /><p className="font-pixel mt-3 text-xs font-bold">Nenhum conceito encontrado</p><p className="mt-1 text-sm text-black/45">Tente outro termo ou selecione outra área.</p></div>
 
-  return <section aria-label="Roadmap Full Stack em lista" className="grid items-start gap-4 md:grid-cols-2 lg:grid-cols-4">
+  return <section aria-label="Roadmap Full Stack em lista" className={cn(singleCategory ? "mx-auto max-w-3xl" : "grid items-start gap-4 md:grid-cols-2 lg:grid-cols-4")}>
     {groups.map((group) => {
       const doneCount = group.nodes.filter((node) => completed.has(node.key)).length
-      return <article key={group.key} className={cn("rounded-xl border bg-gradient-to-b p-4", group.panel, group.border)}>
-        <header className="mb-5 flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-lg bg-white shadow-sm">
-            <Image src={group.icon} alt={group.title} width={24} height={24} className="size-6 object-contain" />
+      return <article key={group.key} className={cn("border bg-gradient-to-b", singleCategory ? "border-blue-300 bg-[#fffef9] p-0 shadow-[0_8px_30px_rgba(30,100,200,.08)]" : "rounded-xl p-4", group.panel, group.border)}>
+        <header className={cn("flex items-center gap-3", singleCategory ? "mb-7 border-b border-blue-200 bg-blue-50/80 px-7 py-5" : "mb-5")}>
+          <span className={cn("grid place-items-center bg-white shadow-sm", singleCategory ? "size-14 border border-blue-100" : "size-10 rounded-lg")}>
+            <Image src={group.icon} alt={group.title} width={32} height={32} className={cn("object-contain", singleCategory ? "size-8" : "size-6")} />
           </span>
           <div>
-            <h3 className="font-pixel text-xs font-bold uppercase">{group.title}</h3>
-            <p className="mt-0.5 text-xs text-black/45">{doneCount}/{group.nodes.length} etapas</p>
+            <h3 className={cn("font-pixel font-bold uppercase", singleCategory ? "text-base" : "text-xs")}>{group.title}</h3>
+            <p className={cn("mt-0.5 text-black/45", singleCategory ? "text-sm" : "text-xs")}>{doneCount}/{group.nodes.length} etapas</p>
           </div>
+          {singleCategory && <p className="font-pixel ml-auto hidden text-[8px] font-bold uppercase tracking-[.24em] text-blue-400 sm:block">Aprenda <span className="px-1 text-blue-300">›</span> Pratique <span className="px-1 text-blue-300">›</span> Construa</p>}
         </header>
-        <div className="space-y-0">{group.nodes.map((node, index) => {
+        <div className={cn(singleCategory ? "px-7 pb-8 sm:px-16" : "space-y-0")}>{group.nodes.map((node, index) => {
           const done = completed.has(node.key)
           const prerequisites = FULL_STACK_ROADMAP_DEFINITION.edges.filter((edge) => edge.to === node.key).map((edge) => edge.from)
           const available = prerequisites.length === 0 || prerequisites.every((key) => completed.has(key))
           const StatusIcon = done ? Check : available ? Play : LockKeyhole
-          return <div key={node.key} className="relative pb-6 last:pb-0">
-            {index < group.nodes.length - 1 && <span aria-hidden="true" className={cn("absolute left-1/2 top-full h-6 -translate-x-1/2 -translate-y-6 border-l-2", available ? "border-solid border-blue-500" : "border-dashed border-black/35")}><span className="absolute -bottom-0.5 -left-1 text-[10px] text-blue-600">↓</span></span>}
-            <button type="button" onClick={() => onSelect(node)} aria-label={`${node.title}. ${done ? "Concluído. Abrir para revisar" : "Abrir conteúdo"}`} className={cn("group flex min-h-14 w-full items-center gap-3 rounded-md border px-3 py-2 text-left shadow-sm outline-none transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-4 focus-visible:ring-blue-300", done ? "border-green-500 bg-green-50" : available ? "border-blue-500 bg-white" : "border-black/15 bg-[#f2f3f3] text-black/60")}>
+          const goesRight = index % 2 === 0
+          return <div key={node.key} className={cn("relative", singleCategory ? "pb-10 last:pb-0" : "pb-6 last:pb-0")}>
+            {index < group.nodes.length - 1 && (singleCategory ? <span aria-hidden="true" className={cn("absolute top-7 hidden h-24 w-1/2 border-blue-500 sm:block", goesRight ? "left-1/4 border-r-2 border-t-2" : "left-1/4 border-l-2 border-t-2")}><span className={cn("absolute -bottom-1 text-sm leading-none text-blue-600", goesRight ? "-right-[5px]" : "-left-[5px]")}>↓</span></span> : <span aria-hidden="true" className={cn("absolute left-1/2 top-full h-6 -translate-x-1/2 -translate-y-6 border-l-2", available ? "border-solid border-blue-500" : "border-dashed border-black/35")}><span className="absolute -bottom-0.5 -left-1 text-[10px] text-blue-600">↓</span></span>)}
+            <button type="button" onClick={() => onSelect(node)} aria-label={`${node.title}. ${done ? "Concluído. Abrir para revisar" : "Abrir conteúdo"}`} className={cn("group relative z-10 flex min-h-14 items-center gap-3 border px-3 py-2 text-left shadow-sm outline-none transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-4 focus-visible:ring-blue-300", singleCategory ? cn("w-full bg-white sm:w-[46%]", !goesRight && "sm:ml-auto") : "w-full rounded-md", done ? "border-green-500 bg-green-50" : available ? "border-blue-500 bg-white" : "border-black/15 bg-[#f2f3f3] text-black/60")}>
               <Image src={`${roadmapLogoBase}/${nodeLogos[node.key]}`} alt="" width={44} height={44} className="size-10 shrink-0 object-contain" /><span className="font-pixel min-w-0 flex-1 text-[10px] font-bold leading-4">{node.title}</span><span className={cn("grid size-6 shrink-0 place-items-center rounded text-white", done ? "bg-green-600" : available ? "bg-blue-600" : "bg-slate-500")} aria-hidden="true"><StatusIcon className="size-3.5" /></span>
             </button>
           </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Download, ExternalLink, CheckCircle2, FileText, Image as ImageIcon, Shield } from "lucide-react"
+import { BookOpen, CalendarDays, CheckCircle2, FileText, Hash, Image as ImageIcon, Link2, Shield, Trophy } from "lucide-react"
 
 interface CertData {
   code: string
@@ -26,8 +26,6 @@ function formatDate(dateInput: Date | string): string {
 
 export function CertificateVerifyView({ cert, code }: { cert: CertData; code: string }) {
   const [copied, setCopied] = useState(false)
-  const verifyUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/verificar/${code}`
-
   function copyLink() {
     navigator.clipboard.writeText(`${window.location.origin}/verificar/${code}`)
     setCopied(true)
@@ -35,22 +33,29 @@ export function CertificateVerifyView({ cert, code }: { cert: CertData; code: st
   }
 
   return (
-    <div className="min-h-screen bg-[#faf9f0] px-4 py-12 text-[#111820]">
+    <div className="relative min-h-screen overflow-hidden bg-[#fbfaf1] px-4 py-5 text-[#0b2037] sm:px-7">
+      <div aria-hidden className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_8%_55%,#d5c5a3_0_3px,transparent_4px),radial-gradient(circle_at_91%_9%,#d5c5a3_0_3px,transparent_4px),radial-gradient(circle_at_94%_68%,#d5c5a3_0_3px,transparent_4px)]" />
+      <p aria-hidden className="font-pixel pointer-events-none absolute right-[5%] top-16 hidden text-[9px] font-bold uppercase leading-4 tracking-[.25em] text-black/20 xl:block">Estude.<br />Evolua.<br />Conquiste.</p>
+      <p aria-hidden className="font-pixel pointer-events-none absolute bottom-24 left-[4%] hidden text-xs font-bold uppercase tracking-[.25em] text-black/20 xl:block">Ritimu</p>
       {/* Header */}
-      <header className="mx-auto mb-10 flex max-w-2xl items-center justify-between">
+      <header className="relative mx-auto mb-5 flex max-w-4xl items-center justify-between border-b-2 border-[#0b2037] pb-3">
         <Link href="/" className="font-pixel flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#111820] opacity-70 hover:opacity-100 transition-opacity">
           ← Ritimu
         </Link>
-        <span className="font-pixel flex items-center gap-1.5 rounded-full border border-green-700/30 bg-green-50 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-green-700">
+        <span className="font-pixel flex items-center gap-1.5 border-2 border-green-800 bg-green-50 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-green-800 shadow-[2px_2px_0_rgba(21,128,61,.25)]">
           <Shield className="size-3" /> Verificado
         </span>
       </header>
 
       {/* Certificate Card */}
-      <main className="mx-auto max-w-2xl">
+      <main className="relative mx-auto max-w-4xl">
         {/* Hero verification banner */}
-        <div className="mb-6 flex items-start gap-4 rounded-2xl border-2 border-green-700/20 bg-green-50 p-6">
-          <span className="grid size-14 shrink-0 place-items-center rounded-xl bg-green-700 text-white">
+        <div className="relative mb-5 flex items-center gap-5 border-2 border-green-800 bg-[#effcf2] px-7 py-4 shadow-[inset_0_0_24px_rgba(22,163,74,.06)]">
+          <i aria-hidden className="absolute left-[-2px] top-[-2px] size-3 border-l-4 border-t-4 border-green-800" />
+          <i aria-hidden className="absolute right-[-2px] top-[-2px] size-3 border-r-4 border-t-4 border-green-800" />
+          <i aria-hidden className="absolute bottom-[-2px] left-[-2px] size-3 border-b-4 border-l-4 border-green-800" />
+          <i aria-hidden className="absolute bottom-[-2px] right-[-2px] size-3 border-b-4 border-r-4 border-green-800" />
+          <span className="grid size-16 shrink-0 place-items-center bg-green-700 text-white">
             <CheckCircle2 className="size-7" />
           </span>
           <div>
@@ -68,7 +73,7 @@ export function CertificateVerifyView({ cert, code }: { cert: CertData; code: st
         </div>
 
         {/* Certificate preview */}
-        <div className="mb-6 overflow-hidden rounded-2xl border-2 border-[#172017] shadow-[6px_6px_0_#172017]">
+        <div className="mb-5 overflow-hidden border-2 border-[#0b2037] shadow-[6px_6px_0_#0b2037]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`/api/certificates/${code}/image`}
@@ -79,22 +84,22 @@ export function CertificateVerifyView({ cert, code }: { cert: CertData; code: st
         </div>
 
         {/* Details */}
-        <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: "Trilha", value: cert.roadmapName },
-            { label: "Nota", value: `${cert.score}/${cert.totalQuestions} (${cert.percentage}%)` },
-            { label: "Emitido em", value: formatDate(cert.issuedAt) },
-            { label: "Código", value: code },
-          ].map(({ label, value }) => (
-            <div key={label} className="rounded-xl border border-black/10 bg-white p-4">
-              <p className="font-pixel text-[9px] font-bold uppercase tracking-widest text-black/40">{label}</p>
-              <p className="font-pixel mt-1 text-xs font-bold break-all">{value}</p>
+            { label: "Trilha", value: cert.roadmapName, icon: BookOpen },
+            { label: "Nota", value: `${cert.score}/${cert.totalQuestions} (${cert.percentage}%)`, icon: Trophy },
+            { label: "Emitido em", value: formatDate(cert.issuedAt), icon: CalendarDays },
+            { label: "Código", value: code, icon: Hash },
+          ].map(({ label, value, icon: Icon }) => (
+            <div key={label} className="flex min-h-20 items-start gap-3 border border-[#0b2037]/35 bg-white/80 p-4 shadow-[1px_1px_0_rgba(11,32,55,.2)]">
+              <Icon className="mt-0.5 size-5 shrink-0" />
+              <div><p className="font-pixel text-[9px] font-bold uppercase tracking-widest text-black/45">{label}</p><p className="font-pixel mt-1 break-all text-[11px] font-bold leading-4">{value}</p></div>
             </div>
           ))}
         </div>
 
         {/* Download buttons */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
           <a
             href={`/api/certificates/${code}/pdf`}
             download
@@ -114,23 +119,21 @@ export function CertificateVerifyView({ cert, code }: { cert: CertData; code: st
         </div>
 
         {/* Share / copy link */}
-        <div className="flex items-center gap-2 rounded-xl border border-black/10 bg-white p-3">
-          <ExternalLink className="size-4 shrink-0 text-black/40" />
-          <span className="flex-1 truncate font-mono text-xs text-black/50">
+        <div className="flex items-center gap-3 border border-[#0b2037]/30 bg-white/80 p-3">
+          <Link2 className="size-4 shrink-0 text-[#0b2037]/50" />
+          <span suppressHydrationWarning className="flex-1 truncate font-mono text-xs text-[#0b2037]/50">
             {typeof window !== "undefined" ? `${window.location.origin}/verificar/${code}` : `/verificar/${code}`}
           </span>
           <button
             type="button"
             onClick={copyLink}
-            className="font-pixel shrink-0 rounded-lg border border-black/15 bg-black/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-colors hover:bg-black/10"
+            className="font-pixel shrink-0 border border-[#0b2037]/40 bg-[#f4f7f8] px-4 py-1.5 text-[9px] font-bold uppercase tracking-widest shadow-[1px_1px_0_rgba(11,32,55,.25)] transition-colors hover:bg-white"
           >
             {copied ? "Copiado!" : "Copiar link"}
           </button>
         </div>
 
-        <p className="mt-8 text-center text-xs text-black/30">
-          Este certificado foi emitido pela <strong>Ritimu</strong> e pode ser verificado a qualquer momento nesta página.
-        </p>
+        <div className="mt-6 flex items-center gap-5 text-black/30"><span className="h-px flex-1 bg-current" /><span className="size-1 rotate-45 bg-current" /><p className="text-center text-xs">Este certificado foi emitido pela <strong>Ritimu</strong> e pode ser verificado a qualquer momento nesta página.</p><span className="size-1 rotate-45 bg-current" /><span className="h-px flex-1 bg-current" /></div>
       </main>
     </div>
   )

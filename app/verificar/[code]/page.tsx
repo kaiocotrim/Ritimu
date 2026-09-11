@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: `Certificado de conclusão da trilha ${cert.roadmapName} emitido pela Ritimu em ${new Intl.DateTimeFormat("pt-BR", { day: "numeric", month: "long", year: "numeric" }).format(new Date(cert.issuedAt))}.`,
     openGraph: {
       title: `Certificado de ${cert.studentName}`,
-      description: `Trilha ${cert.roadmapName} · 100% de aproveitamento`,
+      description: `Trilha ${cert.roadmapName} · ${cert.percentage}% de aproveitamento`,
       images: [`/api/certificates/${code}/image`],
     },
   }

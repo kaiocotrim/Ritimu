@@ -21,7 +21,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ cod
       headers: {
         "Content-Type": "image/png",
         "Content-Disposition": `attachment; filename="certificado-${code}.png"`,
-        "Cache-Control": "public, max-age=86400, immutable",
+        "Cache-Control": "no-store",
       },
     })
   } catch (error) {

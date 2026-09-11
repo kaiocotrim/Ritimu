@@ -50,6 +50,7 @@ function calculateNameFontSize(name: string): number {
  */
 export async function renderCertificateImage(data: CertificateRenderData): Promise<Buffer> {
   const templatePath = path.join(process.cwd(), "public", "Certificado.png")
+  const pixelFontPath = path.join(process.cwd(), "public", "fonts", "PixelifySans.ttf")
   const templateBuffer = await fs.readFile(templatePath)
 
   const studentName = escapeXml(data.studentName.toUpperCase().trim())
@@ -57,16 +58,22 @@ export async function renderCertificateImage(data: CertificateRenderData): Promi
   const scoreStr = `${data.score}/${data.totalQuestions} (${data.percentage}%)`
   const code = escapeXml(data.code)
   const fontSize = calculateNameFontSize(data.studentName)
+  const nameLayer = await sharp({
+    text: {
+      text: `<span foreground="#1a2836" font_weight="bold" letter_spacing="2048">${studentName}</span>`,
+      font: `Pixelify Sans Bold ${fontSize}`,
+      fontfile: pixelFontPath,
+      width: 760,
+      height: 72,
+      align: "center",
+      rgba: true,
+      wrap: "none",
+    },
+  }).png().toBuffer({ resolveWithObject: true })
 
   const svgOverlay = `
     <svg width="1448" height="1054" xmlns="http://www.w3.org/2000/svg">
       <style>
-        .student-name {
-          font-family: 'Pixelify Sans', 'Courier New', monospace, sans-serif;
-          font-weight: 700;
-          fill: #1a2836;
-          letter-spacing: 2px;
-        }
         .meta-text {
           font-family: 'Courier New', monospace, sans-serif;
           font-size: 15px;
@@ -83,11 +90,6 @@ export async function renderCertificateImage(data: CertificateRenderData): Promi
         }
       </style>
 
-      <!-- Student Name inside the golden box (center x=724, y=556) -->
-      <text x="724" y="556" class="student-name" font-size="${fontSize}" text-anchor="middle" dominant-baseline="central">
-        ${studentName}
-      </text>
-
       <!-- Date and Result centered between text and golden divider line (y=674) -->
       <text x="724" y="674" class="meta-text" text-anchor="middle">
         Concluído em ${dateStr}  ·  Aproveitamento: ${scoreStr}
@@ -101,7 +103,14 @@ export async function renderCertificateImage(data: CertificateRenderData): Promi
   `
 
   return sharp(templateBuffer)
-    .composite([{ input: Buffer.from(svgOverlay), top: 0, left: 0 }])
+    .composite([
+      { input: Buffer.from(svgOverlay), top: 0, left: 0 },
+      {
+        input: nameLayer.data,
+        top: 536,
+        left: Math.round(724 - nameLayer.info.width / 2),
+      },
+    ])
     .png({ quality: 100 })
     .toBuffer()
 }

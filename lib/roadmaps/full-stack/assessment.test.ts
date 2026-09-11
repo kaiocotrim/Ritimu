@@ -27,7 +27,7 @@ describe("Full Stack final assessment", () => {
     expect(publicQuestions.every((question) => !("correctAnswer" in question))).toBe(true)
   })
 
-  it.each([[44, false, false], [45, true, false], [49, true, false], [50, true, true]])("scores %i/50 correctly", (score, passed, certificateEligible) => {
+  it.each([[44, false, false], [45, true, true], [49, true, true], [50, true, true]])("scores %i/50 correctly", (score, passed, certificateEligible) => {
     expect(getAssessmentOutcome(score)).toMatchObject({ passed, certificateEligible })
   })
 

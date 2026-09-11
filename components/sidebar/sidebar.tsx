@@ -40,13 +40,23 @@ export function Sidebar({ variant }: { variant?: "light" | "dark" }) {
     >
       {isRoadmapPage && <div className="hidden items-center gap-2 px-3 pb-7 pt-1 text-white xl:flex"><span className="grid size-10 place-items-center text-[#67e875]"><Zap className="size-9 fill-current" /></span><strong className="font-pixel text-2xl font-bold tracking-wider">RITIMU</strong></div>}
       {isRoadmapPage ? (
-        <Link
-          href="/dashboard"
-          className="font-pixel relative z-10 flex shrink-0 visible items-center gap-2 border-2 border-[#d49a32] bg-[#2f7d3c] px-3 py-2 text-xs font-bold uppercase tracking-wider text-white opacity-100 shadow-[3px_3px_0_#101712] transition-colors duration-150 hover:visible hover:bg-[#45b950] hover:text-white hover:opacity-100 sm:px-4 xl:w-full xl:py-3"
-        >
-          <LogOut className="size-4" aria-hidden="true" />
-          <span className="hidden sm:inline">Sair do Roadmap</span>
-        </Link>
+        <div className="flex gap-2 xl:flex-col">
+          <Link
+            href="/dashboard"
+            className="font-pixel relative z-10 flex shrink-0 items-center justify-center gap-2 border-2 border-[#d49a32] bg-[#2f7d3c] px-3 py-2 text-xs font-bold uppercase tracking-wider text-white shadow-[3px_3px_0_#101712] transition-colors duration-150 hover:bg-[#45b950] sm:px-4 xl:w-full xl:py-3"
+          >
+            <LogOut className="size-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Sair do Roadmap</span>
+          </Link>
+          <Link
+            href="/roadmaps"
+            aria-current="page"
+            className="font-pixel flex shrink-0 items-center justify-center gap-2 border-2 border-white/25 bg-white/10 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-white transition-colors hover:border-[#50d05c] hover:text-[#67e875] sm:px-4 xl:mt-2 xl:w-full xl:justify-start xl:py-3"
+          >
+            <Map className="size-4 text-[#67e875]" aria-hidden="true" />
+            <span className="hidden sm:inline">Todos os roadmaps</span>
+          </Link>
+        </div>
       ) : navigationItems.filter(({ href }) => href !== "/roadmaps").map(({ href, label, Icon }) => {
         const isActive = pathname === href || pathname.startsWith(`${href}/`)
 
@@ -68,7 +78,6 @@ export function Sidebar({ variant }: { variant?: "light" | "dark" }) {
           </Link>
         )
       })}
-      {isRoadmapPage && <div className="relative mt-auto hidden min-h-22 overflow-hidden border-2 border-[#75e8dc]/35 bg- shadow-[4px_4px_0_rgba(0,8,16,.55)] xl:block"><p className="font-pixel relative z-10 px-4 py-5 text-[11px] font-bold uppercase leading-5 tracking-wider text-[#a0ffc5] drop-shadow-[0_1px_2px_rgba(0,20,28,.8)]">Disciplina hoje<br />constrói o seu amanhã.</p></div>}
     </nav>
   )
 }
